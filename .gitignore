@@ -1,4 +1,4 @@
 node_modules/
 *.log
 .vite/
-dist/
+dist/*.map

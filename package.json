@@ -1,7 +1,7 @@
 {
   "name": "trafiklab-timetable-card",
   "version": "1.0.0",
-  "description": "Home Assistant Lovelace card to display Trafiklab timetable data.",
+  "description": "Home Assistant Lovelace card to display Rejseplanen (Danish public transport) timetable data.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,10 @@
     "home-assistant",
     "lovelace",
     "custom-card",
-    "trafiklab"
+    "rejseplanen",
+    "trafiklab",
+    "danish-transport",
+    "public-transport"
   ],
   "author": "",
   "license": "MIT",

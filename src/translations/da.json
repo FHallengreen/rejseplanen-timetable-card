@@ -1,0 +1,39 @@
+{
+  "card": {
+    "title": "Rejseplanen Tidstabel"
+  },
+  "error": {
+    "entity_not_found": "Entitet ikke fundet: {entity}"
+  },
+  "empty": {
+    "no_upcoming": "Ingen kommende afgange"
+  },
+  "label": {
+    "platform": "Perron {platform}",
+    "stand": "Stoppested {platform}",
+    "bay": "Kaj {platform}",
+    "now": "Nu",
+    "in_minutes": "om {minutes} min",
+    "updated": "Opdateret {time}",
+    "mode_bus": "Bus",
+    "mode_metro": "Metro",
+    "mode_train": "Tog",
+    "mode_tram": "Letbane",
+    "mode_taxi": "Taxa",
+    "mode_boat": "Færge"
+  },
+  "status": {
+    "cancelled": "Aflyst",
+    "delayed": "Forsinket {minutes} min",
+    "on_time": "Til tiden"
+  },
+  "editor": {
+    "sensor_entity": "Sensor entitet",
+    "show_heading": "Vis overskrift (venligt navn)",
+    "max_items": "Maks. antal",
+    "section_general": "Kort indstillinger",
+    "help_sensor": "Vælg Rejseplanen tidstabel sensor entitet.",
+    "help_show_heading": "Vis sensorens venlige navn som kortets overskrift.",
+    "help_max_items": "Maksimalt antal afgange der skal vises."
+  }
+}

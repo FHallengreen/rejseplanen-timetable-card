@@ -8,7 +8,7 @@ export default defineConfig({
     rollupOptions: {
       input: 'src/trafiklab-timetable-card.ts',
       output: {
-        entryFileNames: 'trafiklab-timetable-card.js',
+        entryFileNames: 'rejseplanen-timetable-card.js',
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]'
       }

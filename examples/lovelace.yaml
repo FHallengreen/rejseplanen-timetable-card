@@ -1,0 +1,47 @@
+# Example Rejseplanen Lovelace Card Configuration
+
+# Simple single card showing all departures
+type: custom:trafiklab-timetable-card
+entity: sensor.rejseplanen_upcoming_for_timetable_card
+show_name: true
+max_items: 10
+
+---
+
+# Advanced: Separate cards by transport mode with custom styling
+type: vertical-stack
+cards:
+  # Buses
+  - type: custom:trafiklab-timetable-card
+    entity: sensor.rejseplanen_buses
+    show_name: false
+    max_items: 7
+    
+  # Trains (S-tog)
+  # Note: Line-specific colors (C=orange, F=yellow, etc.) are applied automatically
+  - type: custom:trafiklab-timetable-card
+    entity: sensor.rejseplanen_trains
+    show_name: false
+    max_items: 6
+    
+  # Metro
+  # Note: Line-specific colors (M1=green, M2=yellow, etc.) are applied automatically
+  - type: custom:trafiklab-timetable-card
+    entity: sensor.rejseplanen_metro
+    show_name: false
+    max_items: 4
+
+---
+
+# With grid layout
+type: grid
+square: false
+columns: 1
+cards:
+  - type: custom:trafiklab-timetable-card
+    entity: sensor.rejseplanen_upcoming_for_timetable_card
+    show_name: true
+    max_items: 8
+    grid_options:
+      columns: 12
+      rows: auto

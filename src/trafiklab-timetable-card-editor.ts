@@ -1,21 +1,21 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import type { TrafiklabTimetableCardConfig } from './trafiklab-timetable-card';
+import type { RejseplanenTimetableCardConfig } from './trafiklab-timetable-card';
 import { localize } from './localize';
 
 type HomeAssistant = any;
 
-export class TrafiklabTimetableCardEditor extends LitElement {
+export class RejseplanenTimetableCardEditor extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
-  @state() private _config?: TrafiklabTimetableCardConfig;
+  @state() private _config?: RejseplanenTimetableCardConfig;
 
-  setConfig(config: TrafiklabTimetableCardConfig) {
+  setConfig(config: RejseplanenTimetableCardConfig) {
     this._config = { show_name: true, max_items: 5, ...config };
   }
 
   private _valueChanged(ev: Event) {
     if (!this._config) {
-      this._config = { type: 'trafiklab-timetable-card', entity: '', show_name: true, max_items: 5 } as any;
+      this._config = { type: 'rejseplanen-timetable-card', entity: '', show_name: true, max_items: 5 } as any;
     }
     const target = ev.currentTarget as any;
     const detail = (ev as CustomEvent).detail;
@@ -170,4 +170,4 @@ export class TrafiklabTimetableCardEditor extends LitElement {
   `;
 }
 
-customElements.define('trafiklab-timetable-card-editor', TrafiklabTimetableCardEditor);
+customElements.define('rejseplanen-timetable-card-editor', RejseplanenTimetableCardEditor);

@@ -10,6 +10,7 @@ import { property, state } from 'lit/decorators.js';
 import './trafiklab-timetable-card-editor';
 import en from './translations/en.json';
 import sv from './translations/sv.json';
+import da from './translations/da.json';
 
 type HassEntity = {
   entity_id: string;
@@ -24,7 +25,7 @@ type HomeAssistant = {
   language?: string;
 };
 
-export interface TrafiklabTimetableCardConfig {
+export interface RejseplanenTimetableCardConfig {
   type: string;
   entity: string; // sensor entity id
   show_name?: boolean; // show heading with entity friendly name
@@ -36,13 +37,13 @@ declare global {
     customCards?: Array<any>;
   }
   interface HTMLElementTagNameMap {
-    'trafiklab-timetable-card': TrafiklabTimetableCard;
+    'rejseplanen-timetable-card': RejseplanenTimetableCard;
   }
 }
 
-const CARD_TYPE = 'trafiklab-timetable-card';
+const CARD_TYPE = 'rejseplanen-timetable-card';
 
-export class TrafiklabTimetableCard extends LitElement {
+export class RejseplanenTimetableCard extends LitElement {
   private _hass!: HomeAssistant;
   set hass(hass: HomeAssistant) {
     this._hass = hass;
@@ -51,20 +52,20 @@ export class TrafiklabTimetableCard extends LitElement {
   get hass(): HomeAssistant {
     return this._hass;
   }
-  @state() private _config?: TrafiklabTimetableCardConfig;
+  @state() private _config?: RejseplanenTimetableCardConfig;
   // Dynamic overlay sizing
   private _overlayHeight = 0;
   private _overlayTop = 0;
 
-  static getStubConfig(): Partial<TrafiklabTimetableCardConfig> {
+  static getStubConfig(): Partial<RejseplanenTimetableCardConfig> {
     return { show_name: true, max_items: 5 };
   }
 
   static getConfigElement(): HTMLElement {
-    return document.createElement('trafiklab-timetable-card-editor');
+    return document.createElement('rejseplanen-timetable-card-editor');
   }
 
-  setConfig(config: TrafiklabTimetableCardConfig): void {
+  setConfig(config: RejseplanenTimetableCardConfig): void {
     if (!config || !config.entity) {
       throw new Error('Required property missing: entity');
     }
@@ -89,7 +90,7 @@ export class TrafiklabTimetableCard extends LitElement {
 
   private _t(path: string, vars?: Record<string, any>): string {
     const lang = this.hass?.locale?.language || this.hass?.language || 'en';
-    const dict = String(lang).toLowerCase().startsWith('sv') ? (sv as any) : (en as any);
+    const dict = String(lang).toLowerCase().startsWith('da') ? (da as any) : String(lang).toLowerCase().startsWith('sv') ? (sv as any) : (en as any);
     const value = path.split('.').reduce((acc: any, key: string) => (acc ? acc[key] : undefined), dict) || path;
     if (!vars) return value;
     return Object.entries(vars).reduce((str, [k, v]) => str.replaceAll(`{${k}}`, String(v)), value);
@@ -121,6 +122,7 @@ export class TrafiklabTimetableCard extends LitElement {
       canceled: a.canceled,
       platform: a.platform,
       agency: a.agency,
+      station: a.station,
     };
   }
 
@@ -165,6 +167,58 @@ export class TrafiklabTimetableCard extends LitElement {
         ? 'label.bay'
         : 'label.platform';
     return this._t(key, { platform: p });
+  }
+
+  private _getLineColor(line: string | undefined): { bg: string; color: string } | undefined {
+    if (!line) return undefined;
+    const lineStr = String(line).toUpperCase();
+    
+    // Danish Metro lines (Copenhagen)
+    if (lineStr === 'M1') return { bg: '#0A9A48', color: '#fff' }; // Green
+    if (lineStr === 'M2') return { bg: '#FFC917', color: '#000' }; // Yellow
+    if (lineStr === 'M3') return { bg: '#EE3B43', color: '#fff' }; // Red
+    if (lineStr === 'M4') return { bg: '#1EBAE5', color: '#fff' }; // Blue
+    
+    // S-train lines (Copenhagen)
+    if (lineStr === 'A') return { bg: '#0173B7', color: '#fff' }; // Blue
+    if (lineStr === 'B') return { bg: '#72BF44', color: '#fff' }; // Green
+    if (lineStr === 'BX') return { bg: '#72BF44', color: '#fff' }; // Green
+    if (lineStr === 'C') return { bg: '#E87722', color: '#fff' }; // Orange
+    if (lineStr === 'E') return { bg: '#8B8C8E', color: '#fff' }; // Grey
+    if (lineStr === 'F') return { bg: '#FFC917', color: '#000' }; // Yellow
+    if (lineStr === 'H') return { bg: '#E30613', color: '#fff' }; // Red
+    
+    // Copenhagen A-buses (Red/Burgundy)
+    if (lineStr === '1A') return { bg: '#E30613', color: '#fff' };
+    if (lineStr === '2A') return { bg: '#E30613', color: '#fff' };
+    if (lineStr === '3A') return { bg: '#E30613', color: '#fff' };
+    if (lineStr === '4A') return { bg: '#E30613', color: '#fff' };
+    if (lineStr === '5A') return { bg: '#E30613', color: '#fff' };
+    if (lineStr === '6A') return { bg: '#E30613', color: '#fff' };
+    if (lineStr === '7A') return { bg: '#E30613', color: '#fff' };
+    if (lineStr === '9A') return { bg: '#E30613', color: '#fff' };
+    
+    // Copenhagen S-buses (Express - Blue)
+    if (lineStr.endsWith('S') && lineStr.length <= 4) {
+      return { bg: '#0173B7', color: '#fff' };
+    }
+    
+    // Copenhagen E-buses (Express - Grey)
+    if (lineStr.startsWith('E')) {
+      return { bg: '#5A5A5A', color: '#fff' };
+    }
+    
+    // Copenhagen N-buses (Night buses - Dark blue)
+    if (lineStr.startsWith('N') || lineStr.endsWith('N')) {
+      return { bg: '#003366', color: '#fff' };
+    }
+    
+    // Regular buses - Yellow (default for most Copenhagen buses)
+    if (lineStr.match(/^\d+[A-Z]?$/)) {
+      return { bg: '#FFC917', color: '#000' };
+    }
+    
+    return undefined;
   }
 
   private _statusFor(item: any): { label: string; badge: 'ok' | 'delay' | 'cancel'; } {
@@ -277,21 +331,24 @@ export class TrafiklabTimetableCard extends LitElement {
                 const mode = this._modeLabel(d.transport_mode) ?? d.transport_mode;
                 const modeIcon = this._iconForMode(d.transport_mode);
                 const inLabel = min !== undefined ? (min === 0 ? this._t('label.now') : this._t('label.in_minutes', { minutes: min })) : undefined;
+                const lineColors = this._getLineColor(d.line);
+                const pillStyle = lineColors ? `background: ${lineColors.bg}; color: ${lineColors.color};` : '';
                 return html`
                   <div class="row" role="listitem">
                     <div class="line">
                       <span class="pill" role="button" tabindex="0"
+                            style="${pillStyle}"
                             @click=${() => this._openMoreInfo()}
                             @keydown=${(e: KeyboardEvent) => this._onKeyActivate(e)}>
                         ${modeIcon ? html`<ha-icon class="pill-icon" .icon=${modeIcon}></ha-icon>` : nothing}${d.line ?? ''}
                       </span>
                     </div>
                     <div class="main">
+                      ${d.station ? html`<div class="station">${d.station}</div>` : nothing}
                       <div class="dest">${d.destination ?? ''}</div>
                       <div class="meta">
                         ${this._platformLabelFor(d) ? html`<span class="platform">${this._platformLabelFor(d)}</span>` : nothing}
                         ${mode ? html`<span class="mode-text">${mode}</span>` : nothing}
-                        ${d.real_time ? html`<span class="rt">RT</span>` : nothing}
                       </div>
                     </div>
                     <div class="right">
@@ -323,8 +380,8 @@ export class TrafiklabTimetableCard extends LitElement {
       --delay: var(--warning-color, #b36b00);
       --cancel: var(--error-color, #c92a2a);
       /* Size controls for icon and line pill */
-      --trafiklab-pill-font-size: 1.6em; /* ~1.6x larger text */
-      --trafiklab-pill-icon-size: 1.2em; /* scale icon with text */
+      --trafiklab-pill-font-size: 1.3em; /* Smaller pill for more space */
+      --trafiklab-pill-icon-size: 1.1em; /* scale icon with text */
       --trafiklab-pill-icon-nudge: -0.05em; /* slight optical centering */
     }
     .card-body { position: relative; }
@@ -360,6 +417,7 @@ export class TrafiklabTimetableCard extends LitElement {
       font-size: var(--trafiklab-pill-font-size, 2em);
       cursor: pointer;
     }
+    .station { font-size: 0.85em; color: var(--secondary-text-color); margin-bottom: 2px; }
     .dest { font-weight: 600; font-size: 1.1em; }
     .meta { color: var(--secondary-text-color); font-size: 0.86em; display: flex; gap: 8px; }
     .pill-icon {
@@ -389,12 +447,12 @@ export class TrafiklabTimetableCard extends LitElement {
   `;
 }
 
-customElements.define(CARD_TYPE, TrafiklabTimetableCard);
+customElements.define(CARD_TYPE, RejseplanenTimetableCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: CARD_TYPE,
-  name: 'Trafiklab Timetable',
-  description: 'Shows upcoming departures from a Trafiklab timetable sensor',
+  name: 'Rejseplanen Timetable',
+  description: 'Shows upcoming departures from Rejseplanen (Danish public transport)',
   preview: true,
 });
