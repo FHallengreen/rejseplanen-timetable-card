@@ -1,13 +1,13 @@
 /*
-  Trafiklab Timetable Card
-  Home Assistant Lovelace custom card that displays upcoming departures from the Trafiklab integration.
+  Rejseplanen Timetable Card
+  Home Assistant Lovelace custom card that displays upcoming departures from Rejseplanen (Danish public transport).
 */
 
 import { css, html, LitElement, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 
 // Import editor for HA UI config (bundled together by Vite)
-import './trafiklab-timetable-card-editor';
+import './rejseplanen-timetable-card-editor';
 import en from './translations/en.json';
 import sv from './translations/sv.json';
 import da from './translations/da.json';
@@ -99,10 +99,107 @@ export class RejseplanenTimetableCard extends LitElement {
   private _getDepartures(): any[] {
     const entity = this._getEntity();
     if (!entity) return [];
+    
+    // Support both formats: preprocessed 'upcoming' array or raw 'Departure' from Rejseplanen API
     const upcoming = entity.attributes?.upcoming as any[] | undefined;
-    if (Array.isArray(upcoming)) return upcoming;
+    if (Array.isArray(upcoming) && upcoming.length > 0) {
+      // Check if first item has the expected format
+      if ('line' in upcoming[0] || 'destination' in upcoming[0]) {
+        return upcoming; // Already in our format
+      }
+      // Raw Rejseplanen Departure array
+      return upcoming.map(d => this._mapRejseplanenDeparture(d)).filter(d => d !== null);
+    }
+    
+    // Try to get raw Departure array directly
+    const departures = entity.attributes?.Departure as any[] | undefined;
+    if (Array.isArray(departures)) {
+      return departures.map(d => this._mapRejseplanenDeparture(d)).filter(d => d !== null);
+    }
+    
+    // Fallback to single entity format
     const single = this._mapEntityToItem(entity);
     return single ? [single] : [];
+  }
+
+  private _mapRejseplanenDeparture(d: any): any | null {
+    if (!d) return null;
+    
+    const pat = d.ProductAtStop || {};
+    const line = pat.displayNumber || d.name || '';
+    const stop_name = d.stop || '';
+    
+    // Calculate time and minutes
+    const rt_full = d.rtTime || '';
+    const sched_full = d.time || '';
+    const dep_time = rt_full || sched_full;
+    
+    let minutes_until = null;
+    if (dep_time) {
+      const dep_hour = parseInt(dep_time.substring(0, 2)) || 0;
+      const dep_min = parseInt(dep_time.substring(3, 5)) || 0;
+      const dep_total = dep_hour * 60 + dep_min;
+      const now = new Date();
+      const now_total = now.getHours() * 60 + now.getMinutes();
+      minutes_until = dep_total - now_total;
+      if (minutes_until < -720) minutes_until += 1440;
+    }
+    
+    // Determine transport mode
+    const cat = (pat.catOut || '').toString();
+    const catl = (pat.catOutL || '').toString();
+    const icon = (pat.icon?.res || '').toString();
+    
+    let mode = 'bus';
+    if (cat === 'MET' || catl.includes('Metro') || icon === 'prod_sub') {
+      mode = 'metro';
+    } else if (catl.includes('Tog') || catl.includes('Train') || cat.includes('S-Tog') || catl.includes('S-Tog') || 
+               ['prod_comm', 'prod_reg', 'prod_long'].includes(icon)) {
+      mode = 'train';
+    } else if (catl.includes('Tram') || catl.includes('Letbane') || icon === 'prod_tram') {
+      mode = 'tram';
+    } else if (catl.includes('Ferry') || catl.includes('Boat') || catl.includes('Færge') || icon === 'prod_ship') {
+      mode = 'boat';
+    }
+    
+    // Extract platform
+    let platform = '';
+    if (d.rtTrack) platform = d.rtTrack.toString();
+    else if (d.track) platform = d.track.toString();
+    else if (d.rtPlatform?.text) platform = d.rtPlatform.text.toString();
+    else if (d.platform?.text) platform = d.platform.text.toString();
+    
+    // Calculate delay
+    let delay_minutes = 0;
+    if (sched_full && rt_full) {
+      const sh = parseInt(sched_full.substring(0, 2)) || 0;
+      const sm = parseInt(sched_full.substring(3, 5)) || 0;
+      const rh = parseInt(rt_full.substring(0, 2)) || 0;
+      const rm = parseInt(rt_full.substring(3, 5)) || 0;
+      const smins = sh * 60 + sm;
+      const rmins = rh * 60 + rm;
+      delay_minutes = rmins - smins;
+      if (delay_minutes < -720) delay_minutes += 1440;
+      if (delay_minutes > 720) delay_minutes -= 1440;
+    }
+    
+    const scheduled = sched_full ? sched_full.substring(0, 5) : '';
+    const expected = rt_full ? rt_full.substring(0, 5) : scheduled;
+    
+    return {
+      line,
+      destination: d.direction || '',
+      scheduled_time: scheduled,
+      expected_time: expected,
+      time_formatted: expected,
+      minutes_until,
+      transport_mode: mode,
+      real_time: !!(rt_full && rt_full !== sched_full),
+      delay_minutes,
+      canceled: false,
+      platform,
+      station: stop_name
+    };
   }
 
   private _mapEntityToItem(entity: HassEntity) {

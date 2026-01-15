@@ -47,10 +47,10 @@ sensor:
     scan_interval: 240
     timeout: 30
     value_template: >
-      {% if value_json is defined %}
-        {{ value_json.requestId if value_json.requestId is defined else 'json_ok_no_requestId' }}
+      {% if value_json is defined and value_json.Departure is defined %}
+        {{ value_json.Departure | length }}
       {% else %}
-        not_json
+        0
       {% endif %}
     json_attributes:
       - Departure
@@ -90,119 +90,11 @@ max_items: 15
 
 ## Optional: Filtered Sensors
 
-If you want to filter departures or create separate cards for specific transport types, you can create template sensors:
+If you want to filter departures or create separate cards for specific transport types, you can create template sensors.
 
-```yaml
-template:
-  - sensor:
-      # Filter by time: Only show departures at least 10 minutes away
-      - name: Rejseplanen Filtered by Time
-        unique_id: rejseplanen_filtered_time
-        state: >
-          {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set now = now() %}
-          {% set filtered = [] %}
-          {% for d in deps %}
-            {% set dep_time = d.rtTime if d.rtTime else d.time %}
-            {% if dep_time %}
-              {% set dep_hour = dep_time[0:2] | int(0) %}
-              {% set dep_min = dep_time[3:5] | int(0) %}
-              {% set dep_total = dep_hour * 60 + dep_min %}
-              {% set now_total = now.hour * 60 + now.minute %}
-              {% set minutes_until = dep_total - now_total %}
-              {% if minutes_until < -720 %}{% set minutes_until = minutes_until + 1440 %}{% endif %}
-              {% if minutes_until >= 10 %}
-                {% set filtered = filtered + [d] %}
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-          {{ filtered | count }}
-        attributes:
-          Departure: >
-            {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {% set now = now() %}
-            {% set filtered = [] %}
-            {% for d in deps %}
-              {% set dep_time = d.rtTime if d.rtTime else d.time %}
-              {% if dep_time %}
-                {% set dep_hour = dep_time[0:2] | int(0) %}
-                {% set dep_min = dep_time[3:5] | int(0) %}
-                {% set dep_total = dep_hour * 60 + dep_min %}
-                {% set now_total = now.hour * 60 + now.minute %}
-                {% set minutes_until = dep_total - now_total %}
-                {% if minutes_until < -720 %}{% set minutes_until = minutes_until + 1440 %}{% endif %}
-                {% if minutes_until >= 10 %}
-                  {% set filtered = filtered + [d] %}
-                {% endif %}
-              {% endif %}
-            {% endfor %}
-            {{ filtered }}
-      
-      # Filter by specific lines: Only show specific lines (e.g., Metro M1 and M2)
-      - name: Rejseplanen My Lines
-        unique_id: rejseplanen_my_lines
-        state: >
-          {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set my_lines = ['M1', 'M2', '5A'] %}
-          {% set filtered = [] %}
-          {% for d in deps %}
-            {% set line = d.ProductAtStop.displayNumber if d.ProductAtStop.displayNumber is defined else d.name %}
-            {% if line in my_lines %}
-              {% set filtered = filtered + [d] %}
-            {% endif %}
-          {% endfor %}
-          {{ filtered | count }}
-        attributes:
-          Departure: >
-            {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {% set my_lines = ['M1', 'M2', '5A'] %}
-            {% set filtered = [] %}
-            {% for d in deps %}
-              {% set line = d.ProductAtStop.displayNumber if d.ProductAtStop.displayNumber is defined else d.name %}
-              {% if line in my_lines %}
-                {% set filtered = filtered + [d] %}
-              {% endif %}
-            {% endfor %}
-            {{ filtered }}
-      
-      # Blacklist: Exclude specific lines (e.g., night buses)
-      - name: Rejseplanen Without Lines
-        unique_id: rejseplanen_blacklist
-        state: >
-          {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set blacklist = ['1N', '2N', '3N'] %}
-          {% set filtered = [] %}
-          {% for d in deps %}
-            {% set line = d.ProductAtStop.displayNumber if d.ProductAtStop.displayNumber is defined else d.name %}
-            {% if line not in blacklist %}
-              {% set filtered = filtered + [d] %}
-            {% endif %}
-          {% endfor %}
-          {{ filtered | count }}
-        attributes:
-          Departure: >
-            {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {% set blacklist = ['1N', '2N', '3N'] %}
-            {% set filtered = [] %}
-            {% for d in deps %}
-              {% set line = d.ProductAtStop.displayNumber if d.ProductAtStop.displayNumber is defined else d.name %}
-              {% if line not in blacklist %}
-                {% set filtered = filtered + [d] %}
-              {% endif %}
-            {% endfor %}
-            {{ filtered }}
-      
-      # Filter by station (replace 'YourStation' with your actual station name)
-      - name: Rejseplanen Specific Station
-        unique_id: rejseplanen_station
-        state: >
-          {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set filtered = deps | selectattr('stop', 'defined') | selectattr('stop', 'search', 'YourStation') | list %}
-          {{ filtered | count }}
-        attributes:
-          Departure: >
-            {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {{ deps | selectattr('stop', 'defined') | selectattr('stop', 'search', 'YourStation') | list }}
+### Filter by Transport Type
+
+Use these generic examples to filter by buses, trains, or metro. These examples use the **namespace** pattern which is more reliable in newer Home Assistant versions:
 
 ```yaml
 template:
@@ -212,77 +104,290 @@ template:
         unique_id: rejseplanen_buses
         state: >
           {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set buses = deps | selectattr('ProductAtStop.catOutL', 'defined') | selectattr('ProductAtStop.catOutL', 'search', 'Bus') | list %}
-          {{ buses | count }}
+          {% set filtered = namespace(items=[]) %}
+          {% for d in deps %}
+            {% set pat = d.ProductAtStop | default({}) %}
+            {% set catl = (pat.catOutL | default('')) | string %}
+            {% if 'Bus' in catl %}
+              {% set filtered.items = filtered.items + [d] %}
+            {% endif %}
+          {% endfor %}
+          {{ filtered.items | length }}
         attributes:
           Departure: >
             {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {{ deps | selectattr('ProductAtStop.catOutL', 'defined') | selectattr('ProductAtStop.catOutL', 'search', 'Bus') | list }}
+            {% set filtered = namespace(items=[]) %}
+            {% for d in deps %}
+              {% set pat = d.ProductAtStop | default({}) %}
+              {% set catl = (pat.catOutL | default('')) | string %}
+              {% if 'Bus' in catl %}
+                {% set filtered.items = filtered.items + [d] %}
+              {% endif %}
+            {% endfor %}
+            {{ filtered.items }}
       
-      # Filter: Only trains (S-tog)
+      # Filter: Only trains (S-tog or regional trains)
       - name: Rejseplanen Trains
         unique_id: rejseplanen_trains
         state: >
           {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set trains = deps | selectattr('ProductAtStop.catOutL', 'defined') | selectattr('ProductAtStop.catOutL', 'search', 'S-Tog') | list %}
-          {{ trains | count }}
+          {% set filtered = namespace(items=[]) %}
+          {% for d in deps %}
+            {% set pat = d.ProductAtStop | default({}) %}
+            {% set catl = (pat.catOutL | default('')) | string %}
+            {% if 'S-Tog' in catl or 'Tog' in catl %}
+              {% set filtered.items = filtered.items + [d] %}
+            {% endif %}
+          {% endfor %}
+          {{ filtered.items | length }}
         attributes:
           Departure: >
             {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {{ deps | selectattr('ProductAtStop.catOutL', 'defined') | selectattr('ProductAtStop.catOutL', 'search', 'S-Tog') | list }}
+            {% set filtered = namespace(items=[]) %}
+            {% for d in deps %}
+              {% set pat = d.ProductAtStop | default({}) %}
+              {% set catl = (pat.catOutL | default('')) | string %}
+              {% if 'S-Tog' in catl or 'Tog' in catl %}
+                {% set filtered.items = filtered.items + [d] %}
+              {% endif %}
+            {% endfor %}
+            {{ filtered.items }}
       
       # Filter: Only metro
       - name: Rejseplanen Metro
         unique_id: rejseplanen_metro
         state: >
           {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set metro = deps | selectattr('ProductAtStop.catOut', 'defined') | selectattr('ProductAtStop.catOut', 'eq', 'MET') | list %}
-          {{ metro | count }}
+          {% set filtered = namespace(items=[]) %}
+          {% for d in deps %}
+            {% set pat = d.ProductAtStop | default({}) %}
+            {% set cat = (pat.catOut | default('')) | string %}
+            {% if cat == 'MET' %}
+              {% set filtered.items = filtered.items + [d] %}
+            {% endif %}
+          {% endfor %}
+          {{ filtered.items | length }}
         attributes:
           Departure: >
             {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {{ deps | selectattr('ProductAtStop.catOut', 'defined') | selectattr('ProductAtStop.catOut', 'eq', 'MET') | list }}
-      
-      # Filter: Specific lines only (e.g., bus 2A and 12)
+            {% set filtered = namespace(items=[]) %}
+            {% for d in deps %}
+              {% set pat = d.ProductAtStop | default({}) %}
+              {% set cat = (pat.catOut | default('')) | string %}
+              {% if cat == 'MET' %}
+                {% set filtered.items = filtered.items + [d] %}
+              {% endif %}
+            {% endfor %}
+            {{ filtered.items }}
+```
+
+### Filter by Time
+
+Only show departures that are at least X minutes away:
+
+```yaml
+template:
+  - sensor:
+      - name: Rejseplanen Filtered by Time
+        unique_id: rejseplanen_filtered_time
+        state: >
+          {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
+          {% set min_minutes = 10 %}
+          {% set now = now() %}
+          {% set filtered = namespace(items=[]) %}
+          {% for d in deps %}
+            {% set dep_time = d.rtTime | default(d.time, true) | default('') %}
+            {% if dep_time and dep_time | length >= 5 %}
+              {% set dep_hour = dep_time[0:2] | int(0) %}
+              {% set dep_min = dep_time[3:5] | int(0) %}
+              {% set dep_total = dep_hour * 60 + dep_min %}
+              {% set now_total = now.hour * 60 + now.minute %}
+              {% set minutes_until = dep_total - now_total %}
+              {% if minutes_until < -720 %}
+                {% set minutes_until = minutes_until + 1440 %}
+              {% endif %}
+              {% if minutes_until >= min_minutes %}
+                {% set filtered.items = filtered.items + [d] %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {{ filtered.items | length }}
+        attributes:
+          Departure: >
+            {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
+            {% set min_minutes = 10 %}
+            {% set now = now() %}
+            {% set filtered = namespace(items=[]) %}
+            {% for d in deps %}
+              {% set dep_time = d.rtTime | default(d.time, true) | default('') %}
+              {% if dep_time and dep_time | length >= 5 %}
+                {% set dep_hour = dep_time[0:2] | int(0) %}
+                {% set dep_min = dep_time[3:5] | int(0) %}
+                {% set dep_total = dep_hour * 60 + dep_min %}
+                {% set now_total = now.hour * 60 + now.minute %}
+                {% set minutes_until = dep_total - now_total %}
+                {% if minutes_until < -720 %}
+                  {% set minutes_until = minutes_until + 1440 %}
+                {% endif %}
+                {% if minutes_until >= min_minutes %}
+                  {% set filtered.items = filtered.items + [d] %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            {{ filtered.items }}
+```
+
+### Filter by Specific Lines
+
+Only show specific bus or train lines:
+
+```yaml
+template:
+  - sensor:
       - name: Rejseplanen My Lines
         unique_id: rejseplanen_my_lines
         state: >
           {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set my_lines = deps | selectattr('ProductAtStop.displayNumber', 'defined') | selectattr('ProductAtStop.displayNumber', 'in', ['2A', '12']) | list %}
-          {{ my_lines | count }}
+          {% set my_lines = ['2A', '12', 'M1', 'M2'] %}
+          {% set filtered = namespace(items=[]) %}
+          {% for d in deps %}
+            {% set pat = d.ProductAtStop | default({}) %}
+            {% set line = pat.displayNumber | default(d.name | default('')) %}
+            {% if line in my_lines %}
+              {% set filtered.items = filtered.items + [d] %}
+            {% endif %}
+          {% endfor %}
+          {{ filtered.items | length }}
         attributes:
           Departure: >
             {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {{ deps | selectattr('ProductAtStop.displayNumber', 'defined') | selectattr('ProductAtStop.displayNumber', 'in', ['2A', '12']) | list }}
+            {% set my_lines = ['2A', '12', 'M1', 'M2'] %}
+            {% set filtered = namespace(items=[]) %}
+            {% for d in deps %}
+              {% set pat = d.ProductAtStop | default({}) %}
+              {% set line = pat.displayNumber | default(d.name | default('')) %}
+              {% if line in my_lines %}
+                {% set filtered.items = filtered.items + [d] %}
+              {% endif %}
+            {% endfor %}
+            {{ filtered.items }}
 ```
 
-**Filtering Tips:**
-- The card reads the `Departure` attribute directly from Rejseplanen API
-- Use simple Jinja filters in template sensors to create filtered views
-- Filter by `ProductAtStop.catOutL` (Bus, S-Tog, Metro, etc.)
-- Filter by `ProductAtStop.displayNumber` for specific lines
-- Filter by `stop` field for specific stations
+### Combine Multiple Filters
 
-### YAML examples with filtered sensors:
+Combine transport type, specific lines, and time filters:
 
 ```yaml
+template:
+  - sensor:
+      # Example: Only buses 2A and 12, minimum 10 minutes away
+      - name: Rejseplanen Custom Filter
+        unique_id: rejseplanen_custom
+        state: >
+          {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
+          {% set my_lines = ['2A', '12'] %}
+          {% set min_minutes = 10 %}
+          {% set now = now() %}
+          {% set filtered = namespace(items=[]) %}
+          {% for d in deps %}
+            {% set pat = d.ProductAtStop | default({}) %}
+            {% set catl = (pat.catOutL | default('')) | string %}
+            {% set line = pat.displayNumber | default(d.name | default('')) %}
+            {% if 'Bus' in catl and line in my_lines %}
+              {% set dep_time = d.rtTime | default(d.time, true) | default('') %}
+              {% if dep_time and dep_time | length >= 5 %}
+                {% set dep_hour = dep_time[0:2] | int(0) %}
+                {% set dep_min = dep_time[3:5] | int(0) %}
+                {% set dep_total = dep_hour * 60 + dep_min %}
+                {% set now_total = now.hour * 60 + now.minute %}
+                {% set minutes_until = dep_total - now_total %}
+                {% if minutes_until < -720 %}
+                  {% set minutes_until = minutes_until + 1440 %}
+                {% endif %}
+                {% if minutes_until >= min_minutes %}
+                  {% set filtered.items = filtered.items + [d] %}
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {{ filtered.items | length }}
+        attributes:
+          Departure: >
+            {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
+            {% set my_lines = ['2A', '12'] %}
+            {% set min_minutes = 10 %}
+            {% set now = now() %}
+            {% set filtered = namespace(items=[]) %}
+            {% for d in deps %}
+              {% set pat = d.ProductAtStop | default({}) %}
+              {% set catl = (pat.catOutL | default('')) | string %}
+              {% set line = pat.displayNumber | default(d.name | default('')) %}
+              {% if 'Bus' in catl and line in my_lines %}
+                {% set dep_time = d.rtTime | default(d.time, true) | default('') %}
+                {% if dep_time and dep_time | length >= 5 %}
+                  {% set dep_hour = dep_time[0:2] | int(0) %}
+                  {% set dep_min = dep_time[3:5] | int(0) %}
+                  {% set dep_total = dep_hour * 60 + dep_min %}
+                  {% set now_total = now.hour * 60 + now.minute %}
+                  {% set minutes_until = dep_total - now_total %}
+                  {% if minutes_until < -720 %}
+                    {% set minutes_until = minutes_until + 1440 %}
+                  {% endif %}
+                  {% if minutes_until >= min_minutes %}
+                    {% set filtered.items = filtered.items + [d] %}
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            {{ filtered.items }}
+```
+
+### Filtering Tips
+
+**Transport Type Filters:**
+- `catOut == 'MET'` - Metro
+- `'Bus' in catOutL` - All buses
+- `'S-Tog' in catOutL` - S-trains (Copenhagen commuter trains)
+- `'Tog' in catOutL` - Regional trains
+
+**Line Filters:**
+- `displayNumber` - The line number/name (e.g., '2A', '12', 'M1', 'A')
+- Use `in my_lines` to match against a list of specific lines
+
+**Time Filters:**
+- Compare `dep_total - now_total` to filter by minutes until departure
+- Handle midnight crossover with `if minutes_until < -720` check
+- Use `rtTime` (real-time) when available, fallback to `time` (scheduled)
+
+### Using Filtered Sensors in Cards
+
+Once you've created filtered sensors, use them in your dashboard:
+
+```yaml
+# Single card with filtered sensor
+type: custom:rejseplanen-timetable-card
+entity: sensor.rejseplanen_buses
+show_name: true
+max_items: 10
+
+# Multiple cards stacked
 type: vertical-stack
 cards:
   - type: custom:rejseplanen-timetable-card
     entity: sensor.rejseplanen_buses
-    show_name: false
+    show_name: true
     max_items: 7
   - type: custom:rejseplanen-timetable-card
     entity: sensor.rejseplanen_trains
-    show_name: false
+    show_name: true
     max_items: 6
   - type: custom:rejseplanen-timetable-card
     entity: sensor.rejseplanen_metro
-    show_name: false
+    show_name: true
     max_items: 4
 ```
 
-**Note:** Line-specific colors for Metro (M1, M2, M3, M4) and S-train lines (A, B, BX, C, E, F, H) are automatically applied based on the `line` attribute.
+**Note:** Line-specific colors for Metro (M1-M4) and S-train lines (A, B, BX, C, E, F, H) are automatically applied.
 
 ## Configuration options
 - `entity` (required): Sensor entity id.

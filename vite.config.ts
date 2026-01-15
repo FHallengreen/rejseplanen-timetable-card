@@ -6,7 +6,7 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
-      input: 'src/trafiklab-timetable-card.ts',
+      input: 'src/rejseplanen-timetable-card.ts',
       output: {
         entryFileNames: 'rejseplanen-timetable-card.js',
         chunkFileNames: 'chunks/[name]-[hash].js',
