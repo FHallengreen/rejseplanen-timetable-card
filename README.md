@@ -1,5 +1,7 @@
 # Rejseplanen Timetable Card
 
+> **Note**: This project is a fork of [HomeAssistant_Trafiklab_Timetable_Card](https://github.com/MrSjodin/HomeAssistant_Trafiklab_Timetable_Card) adapted for Rejseplanen (Danish public transport).
+
 A Home Assistant Dashboard card that shows upcoming departures from Rejseplanen (Danish public transport).
 
 ![card](/assets/preview.png)
@@ -15,6 +17,18 @@ A Home Assistant Dashboard card that shows upcoming departures from Rejseplanen 
 ## Requirements
 - Home Assistant 2024.1+ (tested)
 - Rejseplanen REST sensor (see configuration example below)
+
+## Quick Start
+
+Once you've set up the Rejseplanen sensor (see below), add the card with minimal configuration:
+
+```yaml
+type: custom:rejseplanen-timetable-card
+entity: sensor.rejseplanen_nearby_departures
+max_items: 10
+```
+
+This will display the 10 next departures from all transport types without any filtering.
 
 ## Installation
 
@@ -62,6 +76,8 @@ In your `secrets.yaml`, add your Rejseplanen API URL:
 ```yaml
 rejseplanen_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_ACCESS_ID&originCoordLat=YOUR_LATITUDE&originCoordLong=YOUR_LONGITUDE&r=1000&maxStations=15&duration=120&maxJourneys=30&format=json"
 ```
+
+> **Note:** This card uses the `nearbyDepartureBoard` API endpoint, which returns departures from **all stations within a specified radius** of your coordinates. This means you'll see departures from multiple nearby stops (buses, trains, metro, etc.) combined in one view. If you only want departures from a specific station, you would need to use the `departureBoard` API instead and modify the card accordingly.
 
 **Get your Access ID:**
 - Register at [Rejseplanen Labs](https://help.rejseplanen.dk/hc/da/articles/214174465)
@@ -248,7 +264,7 @@ template:
         unique_id: rejseplanen_my_lines
         state: >
           {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set my_lines = ['2A', '12', 'M1', 'M2'] %}
+          {% set my_lines = ['2A', '5C', 'M1', 'M2'] %}
           {% set filtered = namespace(items=[]) %}
           {% for d in deps %}
             {% set pat = d.ProductAtStop | default({}) %}
@@ -261,7 +277,7 @@ template:
         attributes:
           Departure: >
             {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {% set my_lines = ['2A', '12', 'M1', 'M2'] %}
+            {% set my_lines = ['2A', '5C', 'M1', 'M2'] %}
             {% set filtered = namespace(items=[]) %}
             {% for d in deps %}
               {% set pat = d.ProductAtStop | default({}) %}
@@ -285,7 +301,7 @@ template:
         unique_id: rejseplanen_custom
         state: >
           {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-          {% set my_lines = ['2A', '12'] %}
+          {% set my_lines = ['2A', '5C'] %}
           {% set min_minutes = 10 %}
           {% set now = now() %}
           {% set filtered = namespace(items=[]) %}
@@ -314,7 +330,7 @@ template:
         attributes:
           Departure: >
             {% set deps = state_attr('sensor.rejseplanen_nearby_departures','Departure') or [] %}
-            {% set my_lines = ['2A', '12'] %}
+            {% set my_lines = ['2A', '5C'] %}
             {% set min_minutes = 10 %}
             {% set now = now() %}
             {% set filtered = namespace(items=[]) %}
@@ -351,7 +367,7 @@ template:
 - `'Tog' in catOutL` - Regional trains
 
 **Line Filters:**
-- `displayNumber` - The line number/name (e.g., '2A', '12', 'M1', 'A')
+- `displayNumber` - The line number/name (e.g., '2A', '5C', 'M1', 'A')
 - Use `in my_lines` to match against a list of specific lines
 
 **Time Filters:**
@@ -417,7 +433,7 @@ The card automatically applies official Danish transport colors:
 - S-buses (Express): Blue (#0173B7)
 - E-buses (Express): Grey (#5A5A5A)
 - N-buses (Night): Dark Blue (#003366)
-- Regular buses (12, 14, 150, etc.): Yellow (#FFC917)
+- Regular buses (5C, 14, 150, etc.): Yellow (#FFC917)
 
 Other lines will use the default color scheme.
 

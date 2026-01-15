@@ -20,8 +20,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: trafiklab-timetable-card
-          path: dist/trafiklab-timetable-card.js
+          name: rejseplanen-timetable-card
+          path: dist/rejseplanen-timetable-card.js
 
   release:
     needs: build
@@ -29,12 +29,12 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: trafiklab-timetable-card
+          name: rejseplanen-timetable-card
           path: dist
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/trafiklab-timetable-card.js
+          files: dist/rejseplanen-timetable-card.js
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
