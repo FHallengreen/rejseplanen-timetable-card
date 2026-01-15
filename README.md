@@ -1,5 +1,7 @@
 # Rejseplanen Timetable Card
 
+> **Note**: This project is a fork of [HomeAssistant_Trafiklab_Timetable_Card](https://github.com/MrSjodin/HomeAssistant_Trafiklab_Timetable_Card) adapted for Rejseplanen (Danish public transport).
+
 A Home Assistant Dashboard card that shows upcoming departures from Rejseplanen (Danish public transport).
 
 ![card](/assets/preview.png)
