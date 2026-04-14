@@ -1,6 +1,6 @@
 {
   "name": "trafiklab-timetable-card",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Home Assistant Lovelace card to display Rejseplanen (Danish public transport) timetable data.",
   "type": "module",
   "scripts": {

@@ -149,12 +149,15 @@ export class RejseplanenTimetableCard extends LitElement {
     const cat = (pat.catOut || '').toString();
     const catl = (pat.catOutL || '').toString();
     const icon = (pat.icon?.res || '').toString();
+    const catUpper = cat.toUpperCase();
     
     let mode = 'bus';
     if (cat === 'MET' || catl.includes('Metro') || icon === 'prod_sub') {
       mode = 'metro';
-    } else if (catl.includes('Tog') || catl.includes('Train') || cat.includes('S-Tog') || catl.includes('S-Tog') || 
-               ['prod_comm', 'prod_reg', 'prod_long'].includes(icon)) {
+    } else if (catl.includes('Tog') || catl.includes('Train') || cat.includes('S-Tog') || catl.includes('S-Tog') ||
+               catl.includes('Lokalbane') || catl.includes('Regional') || catl.includes('InterCity') ||
+               ['S', 'RE', 'REG', 'IC', 'ICL', 'LYN', 'LOK', 'ØRE'].includes(catUpper) ||
+               ['prod_comm', 'prod_reg', 'prod_long', 'prod_loc', 'prod_ic'].includes(icon)) {
       mode = 'train';
     } else if (catl.includes('Tram') || catl.includes('Letbane') || icon === 'prod_tram') {
       mode = 'tram';
@@ -266,7 +269,7 @@ export class RejseplanenTimetableCard extends LitElement {
     return this._t(key, { platform: p });
   }
 
-  private _getLineColor(line: string | undefined): { bg: string; color: string } | undefined {
+  private _getLineColor(line: string | undefined, mode?: string): { bg: string; color: string } | undefined {
     if (!line) return undefined;
     const lineStr = String(line).toUpperCase();
     
@@ -284,6 +287,21 @@ export class RejseplanenTimetableCard extends LitElement {
     if (lineStr === 'E') return { bg: '#8B8C8E', color: '#fff' }; // Grey
     if (lineStr === 'F') return { bg: '#FFC917', color: '#000' }; // Yellow
     if (lineStr === 'H') return { bg: '#E30613', color: '#fff' }; // Red
+    
+    // Regional & InterCity trains (DSB)
+    if (lineStr === 'IC') return { bg: '#E30613', color: '#fff' }; // DSB Red
+    if (lineStr === 'LYN' || lineStr === 'ICL') return { bg: '#E30613', color: '#fff' }; // DSB Red
+    if (lineStr === 'REG') return { bg: '#E30613', color: '#fff' }; // DSB Red
+    if (lineStr === 'ØRE' || lineStr === 'ØRESUND') return { bg: '#2B6B3D', color: '#fff' }; // Øresundståg Green
+    
+    // Lokaltog / Local railway lines
+    if (lineStr === 'HORNBÆKBANEN') return { bg: '#1073A5', color: '#fff' }; // Lokaltog Blue
+    if (lineStr === 'LILLE NORD' || lineStr === 'FREDERIKSVÆRKBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'GRIBSKOVBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'NÆRUMBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'ØSTBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'ODSHERREDSBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'TØLLØSEBANEN') return { bg: '#1073A5', color: '#fff' };
     
     // Copenhagen A-buses (Red/Burgundy)
     if (lineStr === '1A') return { bg: '#E30613', color: '#fff' };
@@ -308,6 +326,11 @@ export class RejseplanenTimetableCard extends LitElement {
     // Copenhagen N-buses (Night buses - Dark blue)
     if (lineStr.startsWith('N') || lineStr.endsWith('N')) {
       return { bg: '#003366', color: '#fff' };
+    }
+    
+    // Numeric train numbers (DSB regional) — must be checked before generic bus pattern
+    if (mode === 'train' && lineStr.match(/^\d+$/)) {
+      return { bg: '#E30613', color: '#fff' }; // DSB Red
     }
     
     // Regular buses - Yellow (default for most Copenhagen buses)
@@ -428,7 +451,7 @@ export class RejseplanenTimetableCard extends LitElement {
                 const mode = this._modeLabel(d.transport_mode) ?? d.transport_mode;
                 const modeIcon = this._iconForMode(d.transport_mode);
                 const inLabel = min !== undefined ? (min === 0 ? this._t('label.now') : this._t('label.in_minutes', { minutes: min })) : undefined;
-                const lineColors = this._getLineColor(d.line);
+                const lineColors = this._getLineColor(d.line, d.transport_mode);
                 const pillStyle = lineColors ? `background: ${lineColors.bg}; color: ${lineColors.color};` : '';
                 return html`
                   <div class="row" role="listitem">
