@@ -153,8 +153,10 @@ export class RejseplanenTimetableCard extends LitElement {
     let mode = 'bus';
     if (cat === 'MET' || catl.includes('Metro') || icon === 'prod_sub') {
       mode = 'metro';
-    } else if (catl.includes('Tog') || catl.includes('Train') || cat.includes('S-Tog') || catl.includes('S-Tog') || 
-               ['prod_comm', 'prod_reg', 'prod_long'].includes(icon)) {
+    } else if (catl.includes('Tog') || catl.includes('Train') || cat.includes('S-Tog') || catl.includes('S-Tog') ||
+               catl.includes('Lokalbane') || catl.includes('Regional') || catl.includes('InterCity') ||
+               ['S', 'REG', 'IC', 'LYN', 'LOK', 'ØRE'].includes(cat) ||
+               ['prod_comm', 'prod_reg', 'prod_long', 'prod_loc'].includes(icon)) {
       mode = 'train';
     } else if (catl.includes('Tram') || catl.includes('Letbane') || icon === 'prod_tram') {
       mode = 'tram';
@@ -284,6 +286,21 @@ export class RejseplanenTimetableCard extends LitElement {
     if (lineStr === 'E') return { bg: '#8B8C8E', color: '#fff' }; // Grey
     if (lineStr === 'F') return { bg: '#FFC917', color: '#000' }; // Yellow
     if (lineStr === 'H') return { bg: '#E30613', color: '#fff' }; // Red
+    
+    // Regional & InterCity trains (DSB)
+    if (lineStr === 'IC') return { bg: '#E30613', color: '#fff' }; // DSB Red
+    if (lineStr === 'LYN' || lineStr === 'ICL') return { bg: '#E30613', color: '#fff' }; // DSB Red
+    if (lineStr === 'REG') return { bg: '#E30613', color: '#fff' }; // DSB Red
+    if (lineStr === 'ØRE' || lineStr === 'ØRESUND') return { bg: '#2B6B3D', color: '#fff' }; // Øresundståg Green
+    
+    // Lokaltog / Local railway lines
+    if (lineStr === 'HORNBÆKBANEN') return { bg: '#1073A5', color: '#fff' }; // Lokaltog Blue
+    if (lineStr === 'LILLE NORD' || lineStr === 'FREDERIKSVÆRKBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'GRIBSKOVBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'NÆRUMBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'ØSTBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'ODSHERREDSBANEN') return { bg: '#1073A5', color: '#fff' };
+    if (lineStr === 'TØLLØSEBANEN') return { bg: '#1073A5', color: '#fff' };
     
     // Copenhagen A-buses (Red/Burgundy)
     if (lineStr === '1A') return { bg: '#E30613', color: '#fff' };
