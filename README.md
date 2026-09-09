@@ -2,7 +2,7 @@
 
 A Home Assistant dashboard card for Danish public transport departures via the [Rejseplanen API](https://help.rejseplanen.dk/hc/da/articles/214174465).
 
-![card](/assets/preview.png)
+![Rejseplanen Timetable Card](https://raw.githubusercontent.com/FHallengreen/rejseplanen-timetable-card/main/assets/preview.png)
 
 ## Features
 

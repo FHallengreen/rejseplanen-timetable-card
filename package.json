@@ -1,6 +1,6 @@
 {
-  "name": "trafiklab-timetable-card",
-  "version": "1.1.0",
+  "name": "rejseplanen-timetable-card",
+  "version": "1.2.2",
   "description": "Home Assistant Lovelace card to display Rejseplanen (Danish public transport) timetable data.",
   "type": "module",
   "scripts": {
@@ -17,7 +17,7 @@
     "danish-transport",
     "public-transport"
   ],
-  "author": "",
+  "author": "Frederik Hansen",
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.5.4",
@@ -25,5 +25,13 @@
   },
   "dependencies": {
     "lit": "^3.1.4"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FHallengreen/rejseplanen-timetable-card.git"
+  },
+  "bugs": {
+    "url": "https://github.com/FHallengreen/rejseplanen-timetable-card/issues"
+  },
+  "homepage": "https://github.com/FHallengreen/rejseplanen-timetable-card#readme"
 }

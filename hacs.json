@@ -1,6 +1,9 @@
 {
   "name": "Rejseplanen Timetable Card",
   "filename": "rejseplanen-timetable-card.js",
-  "country": ["DK"],
+  "country": [
+    "DK"
+  ],
+  "homeassistant": "2024.1.0",
   "render_readme": true
 }

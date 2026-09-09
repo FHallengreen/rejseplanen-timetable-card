@@ -1,9 +1,0 @@
-{
-  "image": "https://raw.githubusercontent.com/MrSjodin/HomeAssistant_Trafiklab_Timetable_Card/main/assets/preview.png",
-  "resources": [
-    {
-      "filename": "trafiklab-timetable-card.js",
-      "type": "module"
-    }
-  ]
-}
