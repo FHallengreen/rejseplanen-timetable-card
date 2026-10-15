@@ -10,7 +10,7 @@ import { state } from 'lit/decorators.js';
 import './rejseplanen-timetable-card-editor';
 import { localize } from './localize';
 import {
-  DepartureItem, formatClock, formatClockString, getDepartures, getLineColor, HassEntity, isXmlShaped, pillSize, uses12h,
+  DepartureItem, formatClock, formatClockString, getDepartures, getLineColor, HassEntity, isXmlShaped, pillSize,
 } from './departures';
 
 type HomeAssistant = {
@@ -157,21 +157,17 @@ export class RejseplanenTimetableCard extends LitElement {
     return { label: this._t('status.on_time'), badge: 'ok' };
   }
 
-  private _use12h(): boolean {
-    return uses12h(this.hass?.locale, this.hass?.language);
-  }
-
   private _formatTimeString(item: DepartureItem): string {
     const t = item.time_formatted || item.expected_time || item.scheduled_time;
     if (!t) return '';
-    if (/^\d{1,2}:\d{2}/.test(t)) return formatClockString(t, this._use12h());
+    if (/^\d{1,2}:\d{2}/.test(t)) return formatClockString(t);
     const date = new Date(t);
-    return Number.isNaN(date.getTime()) ? String(t) : formatClock(date.getHours(), date.getMinutes(), this._use12h());
+    return Number.isNaN(date.getTime()) ? String(t) : formatClock(date.getHours(), date.getMinutes());
   }
 
   private _formatUpdated(dt: string): string {
     const d = new Date(dt);
-    return Number.isNaN(d.getTime()) ? dt : formatClock(d.getHours(), d.getMinutes(), this._use12h());
+    return Number.isNaN(d.getTime()) ? dt : formatClock(d.getHours(), d.getMinutes());
   }
 
   private _openMoreInfo(): void {

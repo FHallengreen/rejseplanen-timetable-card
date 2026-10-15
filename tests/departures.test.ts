@@ -10,9 +10,9 @@ import {
   mapRejseplanenDeparture,
   parseDateTime,
   pillSize,
-  uses12h,
 } from '../src/departures';
 import fixture from './fixtures/departure-board.json';
+import kokkedal from './fixtures/kokkedal-regional.json';
 
 // 2026-11-25 23:50:30 local time
 const NOW = new Date(2026, 10, 25, 23, 50, 30);
@@ -76,6 +76,20 @@ describe('mapRejseplanenDeparture', () => {
     const item = mapRejseplanenDeparture({ time: '00:05:00', rtTime: '00:07:00', ProductAtStop: {} }, NOW)!;
     expect(item.minutes_until).toBe(17);
     expect(item.delay_minutes).toBe(2);
+  });
+
+  it('treats an on-time departure without rtTime but with a prognosis as real-time', () => {
+    // Real sensor data: Rejseplanen omits rtTime when the train runs on time
+    const item = mapRejseplanenDeparture(kokkedal.Departure[0], new Date(2026, 9, 15, 14, 10))!;
+    expect(item.real_time).toBe(true);
+    expect(item.delay_minutes).toBe(0);
+    expect(item.minutes_until).toBe(8);
+    expect(item.transport_mode).toBe('train');
+    expect(item.platform).toBe('2');
+  });
+
+  it('treats a departure with only timetable fields as scheduled', () => {
+    expect(mapRejseplanenDeparture(kokkedal.Departure[1], new Date(2026, 9, 15, 14, 10))!.real_time).toBe(false);
   });
 
   it('returns null for empty input', () => {
@@ -162,26 +176,12 @@ describe('getLineColor', () => {
 });
 
 describe('time format', () => {
-  it('follows the UI language when set to "language"', () => {
-    expect(uses12h({ language: 'en', time_format: 'language' })).toBe(true);
-    expect(uses12h({ language: 'en-GB', time_format: 'language' })).toBe(false);
-    expect(uses12h({ language: 'da', time_format: 'language' })).toBe(false);
-    expect(uses12h({ language: 'sv' })).toBe(false);
-    expect(uses12h(undefined, 'da')).toBe(false);
-  });
-
-  it('respects an explicit 12/24 hour choice', () => {
-    expect(uses12h({ language: 'da', time_format: '12' })).toBe(true);
-    expect(uses12h({ language: 'en', time_format: '24' })).toBe(false);
-  });
-
-  it('formats clock times', () => {
-    expect(formatClock(13, 5, false)).toBe('13:05');
-    expect(formatClock(13, 5, true)).toBe('1:05 PM');
-    expect(formatClock(0, 3, true)).toBe('12:03 AM');
-    expect(formatClockString('00:03', false)).toBe('00:03');
-    expect(formatClockString('23:52', true)).toBe('11:52 PM');
-    expect(formatClockString('soon', true)).toBe('soon');
+  it('always formats 24-hour clock times', () => {
+    expect(formatClock(13, 5)).toBe('13:05');
+    expect(formatClock(0, 3)).toBe('00:03');
+    expect(formatClockString('23:52:00')).toBe('23:52');
+    expect(formatClockString('7:05')).toBe('07:05');
+    expect(formatClockString('soon')).toBe('soon');
   });
 });
 

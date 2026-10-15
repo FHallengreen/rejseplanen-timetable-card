@@ -1,0 +1,50 @@
+{
+  "Departure": [
+    {
+      "JourneyStatus": "P",
+      "ProductAtStop": {
+        "icon": { "foregroundColor": { "hex": "#FFFFFF" }, "backgroundColor": { "hex": "#50AE30" }, "res": "prod_ic" },
+        "name": "Re 52257",
+        "displayNumber": "52257",
+        "num": "52257",
+        "line": "52257",
+        "lineHidden": true,
+        "catOut": "Re",
+        "catOutL": "Re",
+        "operator": "DSB"
+      },
+      "Notes": {
+        "Note": [
+          { "value": "Toget har lav indstigning", "key": "BE", "type": "A", "priority": 0, "txtN": "Toget har lav indstigning" },
+          { "value": "Cykelreservering kræves", "key": "CR", "type": "A", "priority": 0, "txtN": "Cykelreservering kræves" }
+        ]
+      },
+      "platform": { "type": "PL", "text": "2" },
+      "rtPlatform": { "type": "PL", "text": "2" },
+      "name": "Re 52257",
+      "type": "ST",
+      "stop": "Kokkedal St.",
+      "stopExtId": "8600664",
+      "prognosisType": "PROGNOSED",
+      "time": "14:18:00",
+      "date": "2026-10-15",
+      "track": "2",
+      "rtTrack": "2",
+      "reachable": true,
+      "direction": "Ringsted St.",
+      "directionFlag": "1"
+    },
+    {
+      "JourneyStatus": "P",
+      "ProductAtStop": { "name": "Re 52559", "displayNumber": "52559", "catOut": "Re", "catOutL": "Re", "icon": { "res": "prod_ic" } },
+      "platform": { "type": "PL", "text": "2" },
+      "name": "Re 52559",
+      "type": "ST",
+      "stop": "Kokkedal St.",
+      "time": "14:33:00",
+      "date": "2026-10-15",
+      "track": "2",
+      "direction": "Holbæk St."
+    }
+  ]
+}

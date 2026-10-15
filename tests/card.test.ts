@@ -3,13 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../src/rejseplanen-timetable-card';
 import type { RejseplanenTimetableCard } from '../src/rejseplanen-timetable-card';
 import fixture from './fixtures/departure-board.json';
+import kokkedal from './fixtures/kokkedal-regional.json';
 
 const ENTITY = 'sensor.rejseplanen_kokkedal';
 
 function hass(attributes: Record<string, any>, language = 'da') {
   return {
     language,
-    locale: { language, time_format: 'language' },
+    locale: { language, time_format: '12' },
     states: {
       [ENTITY]: {
         entity_id: ENTITY,
@@ -85,21 +86,28 @@ describe('rejseplanen-timetable-card', () => {
     expect(root.querySelectorAll('.row')).toHaveLength(2);
   });
 
+  it('shows "on time" for a prognosed departure without rtTime (real sensor data)', async () => {
+    vi.setSystemTime(new Date(2026, 9, 15, 14, 10));
+    const root = await render(kokkedal);
+    const status = [...root.querySelectorAll('.row .status')].map((s) => s.textContent);
+    expect(status).toEqual(['Til tiden', 'Planlagt']);
+  });
+
   it('marks cancelled departures so they can be struck through', async () => {
     const root = await render(fixture);
     const rows = [...root.querySelectorAll('.row')];
     expect(rows.map((r) => r.classList.contains('cancelled'))).toEqual([false, false, false, true]);
   });
 
-  it('uses 24-hour time for Danish and 12-hour time for English', async () => {
+  it('uses 24-hour time in every language, even with a 12-hour profile setting', async () => {
     const da = await render(fixture);
     expect(da.querySelector('.row .time-text')!.textContent).toBe('23:50');
     expect(da.querySelector('.footer .updated')!.textContent).toMatch(/^Opdateret \d{2}:\d{2}$/);
     document.body.innerHTML = '';
 
     const en = await render(fixture, {}, 'en');
-    expect(en.querySelector('.row .time-text')!.textContent).toBe('11:50 PM');
-    expect(en.querySelector('.footer .updated')!.textContent).toMatch(/^Updated \d{1,2}:\d{2} (AM|PM)$/);
+    expect(en.querySelector('.row .time-text')!.textContent).toBe('23:50');
+    expect(en.querySelector('.footer .updated')!.textContent).toMatch(/^Updated \d{2}:\d{2}$/);
   });
 
   it('only shows the stop name when departures come from several stops', async () => {
