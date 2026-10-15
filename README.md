@@ -1,17 +1,22 @@
 # Rejseplanen Timetable Card
 
-A Home Assistant dashboard card for Danish public transport departures via the [Rejseplanen API](https://help.rejseplanen.dk/hc/da/articles/214174465).
+A Home Assistant dashboard card for Danish public transport departures via the [Rejseplanen API](https://labs.rejseplan.dk/).
 
-![Rejseplanen Timetable Card](https://raw.githubusercontent.com/FHallengreen/rejseplanen-timetable-card/main/assets/preview.png)
+![Rejseplanen Timetable Card showing S-tog, regional trains, metro and buses at København H](https://raw.githubusercontent.com/FHallengreen/rejseplanen-timetable-card/main/assets/preview.png)
+
+*One card per service at København H: S-tog and metro in the light theme, regional & InterCity trains and buses in the dark theme.*
 
 ## Features
 
-- Departures with line, destination, time, minutes until departure, and status (on time / delayed / cancelled)
-- Platform, stand, or bay information
-- Real-time indicator (RT)
+- Departures with line, destination, time, minutes until departure, and status (see [Status](#status))
+- Cancelled departures are struck through so they can't be mistaken for running services
+- Sorted by actual departure time, so delayed services move down the list
+- Live countdown that ticks between sensor updates; departed services are hidden automatically
+- Platform, stand, or bay information; stop names only shown when the board covers several stops
+- Layout adapts to narrow and wide cards (masonry, sections, mobile)
 - Official line colors for Metro, S-train, regional trains, Lokaltog, and Copenhagen buses
 - Automatic transport mode detection (bus, train, metro, tram, boat)
-- Danish, English, and Swedish translations
+- Danish, English, and Swedish translations (follows your Home Assistant language, see [Language](#language))
 
 ## Installation
 
@@ -34,7 +39,13 @@ The card reads raw Rejseplanen API data from a REST sensor's `Departure` attribu
 
 ### Get an Access ID
 
-Register at [Rejseplanen Labs](https://help.rejseplanen.dk/hc/da/articles/214174465) to get your API key.
+Register at [Rejseplanen Labs](https://labs.rejseplan.dk/) to get your API key.
+
+> [!IMPORTANT]
+> Always include `format=json` in the API URL. Without it the API answers in XML, which the card cannot read (the card shows an error telling you so). XML responses also change structure on 2026-11-25 ([announcement](https://labs.rejseplan.dk/hc/da/articles/38992766513565)); JSON sensors are not affected.
+
+> [!NOTE]
+> How often data refreshes is set by `scan_interval` on the REST sensor (seconds), not by the card. Between refreshes the card keeps counting down locally.
 
 ### Option A: Nearby departures (all transport types)
 
@@ -85,7 +96,7 @@ Best for showing departures from a specific station. Use `departureBoard` with a
 ```yaml
 sensor:
   - platform: rest
-    name: Rejseplanen Kokkedal trains
+    name: Rejseplanen København H trains
     resource: !secret rejseplanen_trains_url
     scan_interval: 240
     timeout: 30
@@ -103,14 +114,14 @@ sensor:
 
 **secrets.yaml:**
 ```yaml
-rejseplanen_trains_url: "https://www.rejseplanen.dk/api/departureBoard?accessId=YOUR_ACCESS_ID&id=8600664&duration=120&maxJourneys=15&useBus=0&useMetro=0&format=json"
+rejseplanen_trains_url: "https://www.rejseplanen.dk/api/departureBoard?accessId=YOUR_ACCESS_ID&id=8600626&duration=120&maxJourneys=15&useBus=0&useMetro=0&format=json"
 ```
 
 **departureBoard parameters:**
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| `id` | Station ID (find via Rejseplanen location API) | `8600664` (Kokkedal St.) |
+| `id` | Station ID (find via Rejseplanen location API) | `8600626` (København H) |
 | `useBus` | Include buses (0/1) | `0` |
 | `useMetro` | Include metro (0/1) | `0` |
 | `useTog` | Include trains (0/1) | `1` |
@@ -132,22 +143,53 @@ rejseplanen_trains_url: "https://www.rejseplanen.dk/api/departureBoard?accessId=
 
 Sum the values you want: trains only = `15`, everything except bus = `223`, all = `255` (or omit).
 
-### Combining both
+### Example: one card per service
 
-Use two REST sensors for a dashboard with separate bus and train cards:
+The screenshot at the top uses four sensors around København H, one per service, by combining a small radius with the `products` bitmask. YAML anchors keep the shared settings in one place.
 
+**configuration.yaml:**
 ```yaml
 sensor:
   - platform: rest
-    name: Rejseplanen nearby departures
-    resource: !secret rejseplanen_url
-    # ... (as above)
+    name: København H · S-tog
+    resource: !secret kbh_stog_url
+    <<: &rejseplanen
+      scan_interval: 240
+      timeout: 30
+      value_template: >
+        {% if value_json is defined and value_json.Departure is defined %}
+          {{ value_json.Departure | length }}
+        {% else %}
+          0
+        {% endif %}
+      json_attributes:
+        - Departure
 
   - platform: rest
-    name: Rejseplanen trains
-    resource: !secret rejseplanen_trains_url
-    # ... (as above)
+    name: København H · Regional & IC
+    resource: !secret kbh_regional_url
+    <<: *rejseplanen
+
+  - platform: rest
+    name: København H · Metro
+    resource: !secret kbh_metro_url
+    <<: *rejseplanen
+
+  - platform: rest
+    name: Hovedbanegården · Bus
+    resource: !secret kbh_bus_url
+    <<: *rejseplanen
 ```
+
+**secrets.yaml** (same coordinates and radius, different `products`):
+```yaml
+kbh_stog_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_ACCESS_ID&originCoordLat=55.672778&originCoordLong=12.564444&r=300&products=8&duration=60&maxJourneys=10&format=json"
+kbh_regional_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_ACCESS_ID&originCoordLat=55.672778&originCoordLong=12.564444&r=300&products=7&duration=60&maxJourneys=10&format=json"
+kbh_metro_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_ACCESS_ID&originCoordLat=55.672778&originCoordLong=12.564444&r=300&products=16&duration=60&maxJourneys=10&format=json"
+kbh_bus_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_ACCESS_ID&originCoordLat=55.672778&originCoordLong=12.564444&r=300&products=32&duration=60&maxJourneys=10&format=json"
+```
+
+`products=7` combines Lyn (1), InterCity (2) and regional trains (4); see the bitmask table above.
 
 ## Card Configuration
 
@@ -165,20 +207,47 @@ type: custom:rejseplanen-timetable-card
 entity: sensor.rejseplanen_nearby_departures
 max_items: 10
 
-# Separate cards for buses and trains
-type: vertical-stack
+# One card per service (as in the screenshot)
+type: grid
+columns: 2
+square: false
 cards:
   - type: custom:rejseplanen-timetable-card
-    entity: sensor.rejseplanen_trains
-    show_name: true
-    max_items: 6
+    entity: sensor.kobenhavn_h_s_tog
   - type: custom:rejseplanen-timetable-card
-    entity: sensor.rejseplanen_nearby_departures
-    show_name: true
-    max_items: 8
+    entity: sensor.kobenhavn_h_metro
+  - type: custom:rejseplanen-timetable-card
+    entity: sensor.kobenhavn_h_regional_ic
+  - type: custom:rejseplanen-timetable-card
+    entity: sensor.hovedbanegarden_bus
 ```
 
 You can also add the card from the UI: Dashboards → Edit → Add Card → search "Rejseplanen Timetable".
+
+### Status
+
+| Status | Meaning |
+|--------|---------|
+| **On time** (green) | Live data from Rejseplanen confirms the departure is on time |
+| **Scheduled** (grey) | No live data for this departure; the time is from the timetable |
+| **Delayed X min** (orange) | Live data shows the departure is late; the time shown is the expected time |
+| **Cancelled** (red) | The departure is cancelled and the row is struck through |
+
+### Language
+
+The card uses the language set in your Home Assistant **user profile** (click your name in the sidebar → **Language**). There is no card option for it.
+
+| Profile language | Card language |
+|------------------|---------------|
+| Dansk | Danish |
+| Svenska | Swedish |
+| English, or any other language | English |
+
+This covers the card's own labels (status, "in X min", platform, editor). Stop names and destinations come from Rejseplanen and are shown as-is.
+
+Times follow the **Time format** setting in the same profile page. With the default ("Use language setting"), English shows 12-hour time (1:35 PM) and Danish and Swedish show 24-hour time (13:35). Pick 12 or 24 hours there to override.
+
+Missing your language? Add a file in `src/translations/` (copy `en.json`) and register it in `src/localize.ts`. PRs welcome.
 
 ## Optional: Template Sensor Filtering
 
@@ -333,9 +402,13 @@ The card automatically applies official Danish transport colors:
 
 ```bash
 npm install
-npm run dev    # Development server
-npm run build  # Production build
+npm run dev        # Development server
+npm run typecheck  # TypeScript check
+npm test           # Unit and render tests (Vitest)
+npm run build      # Production build
 ```
+
+Parsing logic lives in `src/departures.ts` and is tested against raw API fixtures in `tests/fixtures/`. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The build outputs `rejseplanen-timetable-card.js` in `dist/`.
 
@@ -344,6 +417,7 @@ The build outputs `rejseplanen-timetable-card.js` in `dist/`.
 - **Card not found:** Ensure the resource is added in Lovelace resources and browser cache is cleared.
 - **No data:** Verify the REST sensor updates correctly in Developer Tools → States. Check the `Departure` attribute exists.
 - **No trains in nearby departures:** The `nearbyDepartureBoard` returns results by stop proximity. Bus stops closer to your coordinates fill the results first. Use `departureBoard` with a station ID for reliable train data, or reduce `maxStops`/`maxJourneys`.
+- **"The sensor returns XML data":** Add `format=json` to the resource URL and restart Home Assistant.
 - **Colors not showing:** Only recognized Danish lines get specific colors. Other lines use the default theme.
 
 ## Credits

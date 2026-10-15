@@ -1,4 +1,4 @@
-# Welcome to Home Assistant Trafiklab Timetable Dashboard Card contributing guide <!-- omit in toc -->
+# Welcome to the Rejseplanen Timetable Card contributing guide <!-- omit in toc -->
 
 Thank you for investing your time in contributing to my project! :sparkles:
 
@@ -6,7 +6,7 @@ In this guide you will get an overview of the contribution workflow from opening
 
 ## New contributor guide
 
-To get an overview of the project, read the [README](../README.md) file. Here are some resources to help you get started with open source contributions, should you be new in the area:
+To get an overview of the project, read the [README](README.md) file. Here are some resources to help you get started with open source contributions, should you be new in the area:
 
 - [Finding ways to contribute to open source on GitHub](https://docs.github.com/en/get-started/exploring-projects-on-github/finding-ways-to-contribute-to-open-source-on-github)
 - [Set up Git](https://docs.github.com/en/get-started/git-basics/set-up-git)
@@ -16,17 +16,17 @@ To get an overview of the project, read the [README](../README.md) file. Here ar
 
 ## Getting started
 
-I assume you've already took a look at the code for the integration as well as gone through the [README](../README.md) so that you already know what the integration does and how it is built up. If not, please take some time to familiarize. 
+I assume you've already took a look at the code for the card as well as gone through the [README](README.md) so that you already know what the card does and how it is built up. If not, please take some time to familiarize. 
 
 ### Issues
 
 #### Create a new issue
 
-If you spot a problem with the integration, or wish to enhance functionality [check if an issue already exists](https://github.com/MrSjodin/HomeAssistant_Trafiklab_Timetable_Card/issues). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/MrSjodin/HomeAssistant_Trafiklab_Timetable_Card/issues/new/choose).
+If you spot a problem with the card, or wish to enhance functionality [check if an issue already exists](https://github.com/FHallengreen/rejseplanen-timetable-card/issues). If a related issue doesn't exist, you can open a new issue using a relevant [issue form](https://github.com/FHallengreen/rejseplanen-timetable-card/issues/new/choose).
 
 #### Solve an issue
 
-Scan through our [existing issues](https://github.com/MrSjodin/HomeAssistant_Trafiklab_Timetable_Card/issues) to find one that you want to contribute on. If you find an issue to work on, you are welcome to open a PR with a fix.
+Scan through our [existing issues](https://github.com/FHallengreen/rejseplanen-timetable-card/issues) to find one that you want to contribute on. If you find an issue to work on, you are welcome to open a PR with a fix.
 
 ### Make Changes
 
@@ -44,10 +44,20 @@ Scan through our [existing issues](https://github.com/MrSjodin/HomeAssistant_Tra
 
 ### Test your changes
 
-Needless to say, but please make sure to test the changes prior to commit.
-- Make sure that the integration loads
-- Make sure that the integration doesn't rise any errors in the logs
-- Make sure that the integration and sensors appear as you expect
+Run the checks before committing:
+
+```bash
+npm run typecheck  # TypeScript
+npm test           # Vitest unit and render tests
+npm run build      # Bundle to dist/
+```
+
+When changing how departures are parsed, add a fixture under `tests/fixtures/` (a raw Rejseplanen API JSON response) and a test that covers it.
+
+Then try the built `dist/rejseplanen-timetable-card.js` in Home Assistant:
+- Make sure the card loads and the visual editor works
+- Make sure the browser console shows no errors
+- Make sure departures appear as you expect
 
 ### Commit your update
 
@@ -68,4 +78,4 @@ Once you submit your PR, your proposal will be revised. We may ask questions or 
 
 Congratulations :tada::tada: Many thanks for your contribution! :sparkles:.
 
-Once your PR is merged, your contributions will be included in the next release. If your contribution is planned for an upcoming release it should show up in the upcoming [milestone](https://github.com/MrSjodin/HomeAssistant_Trafiklab_Integration/milestones).
+Once your PR is merged, your contributions will be included in the next release. If your contribution is planned for an upcoming release it should show up in the upcoming [milestone](https://github.com/FHallengreen/rejseplanen-timetable-card/milestones).

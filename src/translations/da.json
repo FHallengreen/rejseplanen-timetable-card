@@ -1,9 +1,10 @@
 {
   "card": {
-    "title": "Rejseplanen Tidstabel"
+    "title": "Rejseplanen Afgangstavle"
   },
   "error": {
-    "entity_not_found": "Entitet ikke fundet: {entity}"
+    "entity_not_found": "Entitet ikke fundet: {entity}",
+    "xml_format": "Sensoren returnerer XML-data. Tilføj format=json til Rejseplanen API-URL'en."
   },
   "empty": {
     "no_upcoming": "Ingen kommende afgange"
@@ -25,14 +26,15 @@
   "status": {
     "cancelled": "Aflyst",
     "delayed": "Forsinket {minutes} min",
-    "on_time": "Til tiden"
+    "on_time": "Til tiden",
+    "scheduled": "Planlagt"
   },
   "editor": {
     "sensor_entity": "Sensor entitet",
     "show_heading": "Vis overskrift (venligt navn)",
     "max_items": "Maks. antal",
     "section_general": "Kort indstillinger",
-    "help_sensor": "Vælg Rejseplanen tidstabel sensor entitet.",
+    "help_sensor": "Vælg Rejseplanen REST-sensoren (med attributten Departure).",
     "help_show_heading": "Vis sensorens venlige navn som kortets overskrift.",
     "help_max_items": "Maksimalt antal afgange der skal vises."
   }

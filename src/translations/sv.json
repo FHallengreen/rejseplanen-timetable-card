@@ -1,9 +1,10 @@
 {
   "card": {
-    "title": "Trafiklab Tidtabell"
+    "title": "Rejseplanen Tidtabell"
   },
   "error": {
-    "entity_not_found": "Enheten hittades inte: {entity}"
+    "entity_not_found": "Enheten hittades inte: {entity}",
+    "xml_format": "Sensorn returnerar XML-data. Lägg till format=json i Rejseplanen API-URL:en."
   },
   "empty": {
     "no_upcoming": "Inga kommande avgångar"
@@ -25,14 +26,15 @@
   "status": {
     "cancelled": "Inställd",
     "delayed": "Försenad {minutes} min",
-    "on_time": "I tid"
+    "on_time": "I tid",
+    "scheduled": "Planerad"
   },
   "editor": {
     "sensor_entity": "Sensornamn",
     "show_heading": "Visa rubrik (visningsnamn)",
     "max_items": "Max antal",
     "section_general": "Kortalternativ",
-    "help_sensor": "Välj Trafiklab-tidtabellens sensor.",
+    "help_sensor": "Välj Rejseplanen REST-sensorn (med attributet Departure).",
     "help_show_heading": "Visa sensorns visningsnamn som kortets rubrik.",
     "help_max_items": "Maximalt antal avgångar att visa."
   }
