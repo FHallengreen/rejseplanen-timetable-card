@@ -12,6 +12,7 @@ A Home Assistant dashboard card for Danish public transport departures via the [
 - Cancelled departures are struck through so they can't be mistaken for running services
 - Sorted by actual departure time, so delayed services move down the list
 - Live countdown that ticks between sensor updates; departed services are hidden automatically
+- Regional and long-distance trains show their category (Re, IC, Lyn) in the badge and the train number next to the platform, so you can tell e.g. stopping and fast services apart
 - Platform, stand, or bay information; stop names only shown when the board covers several stops
 - Layout adapts to narrow and wide cards (masonry, sections, mobile)
 - Official line colors for Metro, S-train, regional trains, Lokaltog, and Copenhagen buses
@@ -395,7 +396,7 @@ The card automatically applies official Danish transport colors:
 |                         | E                                                                                                                      | Grey          |
 |                         | F                                                                                                                      | Yellow        |
 |                         | H                                                                                                                      | Red           |
-| **DSB Trains**    | IC, ICL/LYN, REG                                                                                                       | DSB Red       |
+| **DSB Trains**    | Re, IC, ICL/Lyn, REG                                                                                                   | DSB Red       |
 | **Øresundståg** | ØRE, Øresund                                                                                                         | Green         |
 | **Lokaltog**      | Hornbækbanen, Lille Nord, Frederiksværkbanen, Gribskovbanen, Nærumbanen, Østbanen, Odsherredsbanen, Tølløsebanen | Lokaltog Blue |
 | **A-buses**       | 1A–9A                                                                                                                 | Red           |
