@@ -12,6 +12,7 @@ A Home Assistant dashboard card for Danish public transport departures via the [
 - Cancelled departures are struck through so they can't be mistaken for running services
 - Sorted by actual departure time, so delayed services move down the list
 - Live countdown that ticks between sensor updates; departed services are hidden automatically
+- Regional and long-distance trains show their category (Re, IC, Lyn) in the badge and the train number next to the platform, so you can tell e.g. stopping and fast services apart
 - Platform, stand, or bay information; stop names only shown when the board covers several stops
 - Layout adapts to narrow and wide cards (masonry, sections, mobile)
 - Official line colors for Metro, S-train, regional trains, Lokaltog, and Copenhagen buses
@@ -52,6 +53,7 @@ Register at [Rejseplanen Labs](https://labs.rejseplan.dk/) to get your API key.
 Best for showing buses and other transport from stops near your location.
 
 **configuration.yaml:**
+
 ```yaml
 sensor:
   - platform: rest
@@ -72,19 +74,20 @@ sensor:
 ```
 
 **secrets.yaml:**
+
 ```yaml
 rejseplanen_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_ACCESS_ID&originCoordLat=YOUR_LAT&originCoordLong=YOUR_LON&r=1000&maxStops=5&duration=120&maxJourneys=30&format=json"
 ```
 
 **API parameters:**
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `r` | Search radius in meters | `1000` |
-| `maxStops` | Max nearby stops to include | `5` |
-| `maxJourneys` | Max total departures | `30` |
-| `duration` | Time window in minutes | `120` |
-| `products` | Transport type bitmask (see below) | `15` |
+| Parameter       | Description                        | Example  |
+| --------------- | ---------------------------------- | -------- |
+| `r`           | Search radius in meters            | `1000` |
+| `maxStops`    | Max nearby stops to include        | `5`    |
+| `maxJourneys` | Max total departures               | `30`   |
+| `duration`    | Time window in minutes             | `120`  |
+| `products`    | Transport type bitmask (see below) | `15`   |
 
 > **Tip:** If buses fill up all results before train stations are reached, reduce `maxStops` or use a smaller radius. For trains, consider using **Option B** instead.
 
@@ -93,6 +96,7 @@ rejseplanen_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=Y
 Best for showing departures from a specific station. Use `departureBoard` with a station ID to guarantee results from that station.
 
 **configuration.yaml:**
+
 ```yaml
 sensor:
   - platform: rest
@@ -113,33 +117,34 @@ sensor:
 ```
 
 **secrets.yaml:**
+
 ```yaml
 rejseplanen_trains_url: "https://www.rejseplanen.dk/api/departureBoard?accessId=YOUR_ACCESS_ID&id=8600626&duration=120&maxJourneys=15&useBus=0&useMetro=0&format=json"
 ```
 
 **departureBoard parameters:**
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `id` | Station ID (find via Rejseplanen location API) | `8600626` (København H) |
-| `useBus` | Include buses (0/1) | `0` |
-| `useMetro` | Include metro (0/1) | `0` |
-| `useTog` | Include trains (0/1) | `1` |
-| `maxJourneys` | Max departures | `15` |
-| `duration` | Time window in minutes | `120` |
+| Parameter       | Description                                    | Example                    |
+| --------------- | ---------------------------------------------- | -------------------------- |
+| `id`          | Station ID (find via Rejseplanen location API) | `8600626` (København H) |
+| `useBus`      | Include buses (0/1)                            | `0`                      |
+| `useMetro`    | Include metro (0/1)                            | `0`                      |
+| `useTog`      | Include trains (0/1)                           | `1`                      |
+| `maxJourneys` | Max departures                                 | `15`                     |
+| `duration`    | Time window in minutes                         | `120`                    |
 
 ### Products bitmask (for `nearbyDepartureBoard`)
 
-| Bit | Value | Type |
-|-----|-------|------|
-| 1 | 1 | Long-distance (ICL/Lyn) |
-| 2 | 2 | InterCity |
-| 3 | 4 | Regional trains |
-| 4 | 8 | S-tog |
-| 5 | 16 | Metro |
-| 6 | 32 | Bus |
-| 7 | 64 | Ferry |
-| 8 | 128 | Letbane/Tram |
+| Bit | Value | Type                    |
+| --- | ----- | ----------------------- |
+| 1   | 1     | Long-distance (ICL/Lyn) |
+| 2   | 2     | InterCity               |
+| 3   | 4     | Regional trains         |
+| 4   | 8     | S-tog                   |
+| 5   | 16    | Metro                   |
+| 6   | 32    | Bus                     |
+| 7   | 64    | Ferry                   |
+| 8   | 128   | Letbane/Tram            |
 
 Sum the values you want: trains only = `15`, everything except bus = `223`, all = `255` (or omit).
 
@@ -148,6 +153,7 @@ Sum the values you want: trains only = `15`, everything except bus = `223`, all 
 The screenshot at the top uses four sensors around København H, one per service, by combining a small radius with the `products` bitmask. YAML anchors keep the shared settings in one place.
 
 **configuration.yaml:**
+
 ```yaml
 sensor:
   - platform: rest
@@ -182,6 +188,7 @@ sensor:
 ```
 
 **secrets.yaml** (same coordinates and radius, different `products`):
+
 ```yaml
 kbh_stog_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_ACCESS_ID&originCoordLat=55.672778&originCoordLong=12.564444&r=300&products=8&duration=60&maxJourneys=10&format=json"
 kbh_regional_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_ACCESS_ID&originCoordLat=55.672778&originCoordLong=12.564444&r=300&products=7&duration=60&maxJourneys=10&format=json"
@@ -193,11 +200,11 @@ kbh_bus_url: "https://www.rejseplanen.dk/api/nearbyDepartureBoard?accessId=YOUR_
 
 ## Card Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `entity` | string | *required* | Sensor entity ID |
-| `show_name` | boolean | `true` | Show entity name as card heading |
-| `max_items` | number | `5` | Max departures to display (1–20) |
+| Option        | Type    | Default      | Description                       |
+| ------------- | ------- | ------------ | --------------------------------- |
+| `entity`    | string  | *required* | Sensor entity ID                  |
+| `show_name` | boolean | `true`     | Show entity name as card heading  |
+| `max_items` | number  | `5`        | Max departures to display (1–20) |
 
 ### Examples
 
@@ -226,26 +233,26 @@ You can also add the card from the UI: Dashboards → Edit → Add Card → sear
 
 ### Status
 
-| Status | Meaning |
-|--------|---------|
-| **On time** (green) | Live data from Rejseplanen confirms the departure is on time |
-| **Scheduled** (grey) | No live data for this departure; the time is from the timetable |
+| Status                           | Meaning                                                                    |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| **On time** (green)        | Live data from Rejseplanen confirms the departure is on time               |
+| **Scheduled** (grey)       | No live data for this departure; the time is from the timetable            |
 | **Delayed X min** (orange) | Live data shows the departure is late; the time shown is the expected time |
-| **Cancelled** (red) | The departure is cancelled and the row is struck through |
+| **Cancelled** (red)        | The departure is cancelled and the row is struck through                   |
 
 ### Language
 
 The card uses the language set in your Home Assistant **user profile** (click your name in the sidebar → **Language**). There is no card option for it.
 
-| Profile language | Card language |
-|------------------|---------------|
-| Dansk | Danish |
-| Svenska | Swedish |
-| English, or any other language | English |
+| Profile language               | Card language |
+| ------------------------------ | ------------- |
+| Dansk                          | Danish        |
+| Svenska                        | Swedish       |
+| English, or any other language | English       |
 
 This covers the card's own labels (status, "in X min", platform, editor). Stop names and destinations come from Rejseplanen and are shown as-is.
 
-Times follow the **Time format** setting in the same profile page. With the default ("Use language setting"), English shows 12-hour time (1:35 PM) and Danish and Swedish show 24-hour time (13:35). Pick 12 or 24 hours there to override.
+Times are always shown in 24-hour format (13:35), like Danish timetables, regardless of language or time format setting.
 
 Missing your language? Add a file in `src/translations/` (copy `en.json`) and register it in `src/localize.ts`. PRs welcome.
 
@@ -366,37 +373,37 @@ template:
 
 ### Filtering reference
 
-| Field | Values | Use for |
-|-------|--------|---------|
-| `catOut` | `Bus`, `MET`, `S`, `REG`, `IC`, `LYN`, `LOK`, `ØRE` | Transport type matching |
-| `catOutL` | `Bus`, `S-Tog`, `Regionaltog`, `Metro`, `Letbane`, etc. | Readable type matching |
-| `displayNumber` | `2A`, `M1`, `A`, `354`, etc. | Line filtering |
-| `icon.res` | `prod_bus`, `prod_sub`, `prod_comm`, `prod_reg`, `prod_long`, `prod_loc`, `prod_tram`, `prod_ship` | Icon-based detection |
+| Field             | Values                                                                                                             | Use for                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| `catOut`        | `Bus`, `MET`, `S`, `REG`, `IC`, `LYN`, `LOK`, `ØRE`                                               | Transport type matching |
+| `catOutL`       | `Bus`, `S-Tog`, `Regionaltog`, `Metro`, `Letbane`, etc.                                                  | Readable type matching  |
+| `displayNumber` | `2A`, `M1`, `A`, `354`, etc.                                                                               | Line filtering          |
+| `icon.res`      | `prod_bus`, `prod_sub`, `prod_comm`, `prod_reg`, `prod_long`, `prod_loc`, `prod_tram`, `prod_ship` | Icon-based detection    |
 
 ## Line Colors
 
 The card automatically applies official Danish transport colors:
 
-| Category | Lines | Color |
-|----------|-------|-------|
-| **Metro** | M1 | Green |
-| | M2 | Yellow |
-| | M3 | Red |
-| | M4 | Blue |
-| **S-train** | A | Blue |
-| | B, BX | Green |
-| | C | Orange |
-| | E | Grey |
-| | F | Yellow |
-| | H | Red |
-| **DSB Trains** | IC, ICL/LYN, REG | DSB Red |
-| **Øresundståg** | ØRE, Øresund | Green |
-| **Lokaltog** | Hornbækbanen, Lille Nord, Frederiksværkbanen, Gribskovbanen, Nærumbanen, Østbanen, Odsherredsbanen, Tølløsebanen | Lokaltog Blue |
-| **A-buses** | 1A–9A | Red |
-| **S-buses** | *S (Express) | Blue |
-| **E-buses** | E* (Express) | Grey |
-| **N-buses** | N* / *N (Night) | Dark Blue |
-| **Regular buses** | Numeric (5C, 14, 150, etc.) | Yellow |
+| Category                | Lines                                                                                                                  | Color         |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------- |
+| **Metro**         | M1                                                                                                                     | Green         |
+|                         | M2                                                                                                                     | Yellow        |
+|                         | M3                                                                                                                     | Red           |
+|                         | M4                                                                                                                     | Blue          |
+| **S-train**       | A                                                                                                                      | Blue          |
+|                         | B, BX                                                                                                                  | Green         |
+|                         | C                                                                                                                      | Orange        |
+|                         | E                                                                                                                      | Grey          |
+|                         | F                                                                                                                      | Yellow        |
+|                         | H                                                                                                                      | Red           |
+| **DSB Trains**    | Re, IC, ICL/Lyn, REG                                                                                                   | DSB Red       |
+| **Øresundståg** | ØRE, Øresund                                                                                                         | Green         |
+| **Lokaltog**      | Hornbækbanen, Lille Nord, Frederiksværkbanen, Gribskovbanen, Nærumbanen, Østbanen, Odsherredsbanen, Tølløsebanen | Lokaltog Blue |
+| **A-buses**       | 1A–9A                                                                                                                 | Red           |
+| **S-buses**       | *S (Express)                                                                                                           | Blue          |
+| **E-buses**       | E* (Express)                                                                                                           | Grey          |
+| **N-buses**       | N* / *N (Night)                                                                                                        | Dark Blue     |
+| **Regular buses** | Numeric (5C, 14, 150, etc.)                                                                                            | Yellow        |
 
 ## Development
 

@@ -27,6 +27,7 @@ export interface DepartureItem {
   platform?: string;
   agency?: string;
   station?: string;
+  train_number?: string;
 }
 
 export interface LineColor {
@@ -75,6 +76,24 @@ export function detectMode(pat: any): TransportMode {
   return 'bus';
 }
 
+// Regional and long-distance trains carry a train number instead of a line (e.g. "52257"),
+// which the API flags with lineHidden. Show the category ("Re", "IC") as the line and keep the
+// number separately. Everything without the flag (buses, S-tog, metro) is left untouched.
+function lineAndTrainNumber(pat: any, d: any): { line: string; train_number?: string } {
+  const number = (pat.num || pat.displayNumber || '').toString();
+  const category = (pat.catOut || '').toString();
+  if ((pat.lineHidden === true || pat.lineHidden === 'true') && category && number) {
+    return { line: category, train_number: number };
+  }
+  return { line: pat.displayNumber || d.name || '' };
+}
+
+// Rejseplanen omits rtTime when a departure runs on time, so rtTime alone misses on-time
+// trains. prognosisType (e.g. "PROGNOSED") and real-time platform fields also mean live data.
+function hasRealtime(d: any): boolean {
+  return !!(d.rtTime || d.prognosisType || d.rtTrack || d.rtPlatform);
+}
+
 export function mapRejseplanenDeparture(d: any, now: Date = new Date()): DepartureItem | null {
   if (!d) return null;
 
@@ -115,14 +134,14 @@ export function mapRejseplanenDeparture(d: any, now: Date = new Date()): Departu
   const expected = rt ? rt.substring(0, 5) : scheduled;
 
   return {
-    line: pat.displayNumber || d.name || '',
+    ...lineAndTrainNumber(pat, d),
     destination: d.direction || '',
     scheduled_time: scheduled,
     expected_time: expected,
     time_formatted: expected,
     minutes_until,
     transport_mode: detectMode(pat),
-    real_time: !!rt,
+    real_time: hasRealtime(d),
     delay_minutes,
     canceled: d.cancelled === true || d.cancelled === 'true',
     platform,
@@ -197,31 +216,15 @@ function isMinutes(value: unknown): value is number {
   return typeof value === 'number' && !Number.isNaN(value);
 }
 
-export type LocaleLike = { language?: string; time_format?: string } | undefined;
-
-// Follow Home Assistant's time format setting. "language" (the default) uses the convention of
-// the UI language, so English gets 12-hour while Danish and Swedish get 24-hour.
-export function uses12h(locale: LocaleLike, fallbackLanguage?: string): boolean {
-  const format = locale?.time_format;
-  if (format === '12') return true;
-  if (format === '24') return false;
-  const lang = format === 'system' ? undefined : locale?.language || fallbackLanguage || 'en';
-  try {
-    return !!new Intl.DateTimeFormat(lang, { hour: 'numeric' }).resolvedOptions().hour12;
-  } catch {
-    return false;
-  }
+// Times are always shown in 24-hour format, like Danish timetables
+export function formatClock(hours: number, minutes: number): string {
+  return `${pad(hours)}:${pad(minutes)}`;
 }
 
-export function formatClock(hours: number, minutes: number, twelveHour: boolean): string {
-  if (!twelveHour) return `${pad(hours)}:${pad(minutes)}`;
-  return `${hours % 12 || 12}:${pad(minutes)} ${hours < 12 ? 'AM' : 'PM'}`;
-}
-
-// Reformat an "HH:MM" string; anything else is returned unchanged
-export function formatClockString(value: string, twelveHour: boolean): string {
+// Normalise an "HH:MM[:SS]" string to "HH:MM"; anything else is returned unchanged
+export function formatClockString(value: string): string {
   const m = /^(\d{1,2}):(\d{2})/.exec(value);
-  return m ? formatClock(+m[1], +m[2], twelveHour) : value;
+  return m ? formatClock(+m[1], +m[2]) : value;
 }
 
 // Size class for the line pill so long names shrink instead of widening the pill.
@@ -238,7 +241,7 @@ const S_TRAIN: Record<string, string> = {
   A: '#0173B7', B: '#72BF44', BX: '#72BF44', C: '#E87722', E: '#8B8C8E', F: '#FFC917', H: '#E30613',
 };
 const DSB_RED = '#E30613';
-const DSB_LINES = ['IC', 'LYN', 'ICL', 'REG'];
+const DSB_LINES = ['IC', 'LYN', 'ICL', 'RE', 'REG'];
 const ORESUND = ['ØRE', 'ØRESUND'];
 const LOKALTOG = [
   'HORNBÆKBANEN', 'LILLE NORD', 'FREDERIKSVÆRKBANEN', 'GRIBSKOVBANEN', 'NÆRUMBANEN', 'ØSTBANEN',
