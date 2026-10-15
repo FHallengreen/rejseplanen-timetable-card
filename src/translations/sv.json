@@ -21,7 +21,8 @@
     "mode_train": "Tåg",
     "mode_tram": "Spårvagn",
     "mode_taxi": "Taxi",
-    "mode_boat": "Båt"
+    "mode_boat": "Båt",
+    "train_number": "Tåg {number}"
   },
   "status": {
     "cancelled": "Inställd",

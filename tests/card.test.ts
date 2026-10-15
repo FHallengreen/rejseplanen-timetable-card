@@ -93,6 +93,18 @@ describe('rejseplanen-timetable-card', () => {
     expect(status).toEqual(['Til tiden', 'Planlagt']);
   });
 
+  it('shows Re in the pill and the train number in the info line', async () => {
+    vi.setSystemTime(new Date(2026, 9, 15, 14, 10));
+    const root = await render(kokkedal);
+    const [re, plain] = [...root.querySelectorAll('.row')];
+    expect(re.querySelector('.pill-text')!.textContent).toBe('Re');
+    expect(re.querySelector('.train-number')!.textContent).toBe('Tog 52257');
+    expect(re.querySelector('.mode-text')).toBeNull();
+    expect(plain.querySelector('.pill-text')!.textContent).toBe('52559');
+    expect(plain.querySelector('.train-number')).toBeNull();
+    expect(plain.querySelector('.mode-text')!.textContent).toBe('Tog');
+  });
+
   it('marks cancelled departures so they can be struck through', async () => {
     const root = await render(fixture);
     const rows = [...root.querySelectorAll('.row')];

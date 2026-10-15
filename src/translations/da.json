@@ -21,7 +21,8 @@
     "mode_train": "Tog",
     "mode_tram": "Letbane",
     "mode_taxi": "Taxa",
-    "mode_boat": "Færge"
+    "mode_boat": "Færge",
+    "train_number": "Tog {number}"
   },
   "status": {
     "cancelled": "Aflyst",

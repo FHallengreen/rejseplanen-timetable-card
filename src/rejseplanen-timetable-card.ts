@@ -273,8 +273,9 @@ export class RejseplanenTimetableCard extends LitElement {
                       ${showStation && d.station ? html`<div class="station">${d.station}</div>` : nothing}
                       <div class="dest">${d.destination ?? ''}</div>
                       <div class="meta">
+                        ${d.train_number ? html`<span class="train-number">${this._t('label.train_number', { number: d.train_number })}</span>` : nothing}
                         ${this._platformLabelFor(d) ? html`<span class="platform">${this._platformLabelFor(d)}</span>` : nothing}
-                        ${mode ? html`<span class="mode-text">${mode}</span>` : nothing}
+                        ${mode && !d.train_number ? html`<span class="mode-text">${mode}</span>` : nothing}
                       </div>
                     </div>
                     <div class="right">

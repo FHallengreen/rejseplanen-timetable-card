@@ -27,6 +27,7 @@ export interface DepartureItem {
   platform?: string;
   agency?: string;
   station?: string;
+  train_number?: string;
 }
 
 export interface LineColor {
@@ -75,6 +76,18 @@ export function detectMode(pat: any): TransportMode {
   return 'bus';
 }
 
+// Regional and long-distance trains carry a train number instead of a line (e.g. "52257"),
+// which the API flags with lineHidden. Show the category ("Re", "IC") as the line and keep the
+// number separately. Everything without the flag (buses, S-tog, metro) is left untouched.
+function lineAndTrainNumber(pat: any, d: any): { line: string; train_number?: string } {
+  const number = (pat.num || pat.displayNumber || '').toString();
+  const category = (pat.catOut || '').toString();
+  if ((pat.lineHidden === true || pat.lineHidden === 'true') && category && number) {
+    return { line: category, train_number: number };
+  }
+  return { line: pat.displayNumber || d.name || '' };
+}
+
 // Rejseplanen omits rtTime when a departure runs on time, so rtTime alone misses on-time
 // trains. prognosisType (e.g. "PROGNOSED") and real-time platform fields also mean live data.
 function hasRealtime(d: any): boolean {
@@ -121,7 +134,7 @@ export function mapRejseplanenDeparture(d: any, now: Date = new Date()): Departu
   const expected = rt ? rt.substring(0, 5) : scheduled;
 
   return {
-    line: pat.displayNumber || d.name || '',
+    ...lineAndTrainNumber(pat, d),
     destination: d.direction || '',
     scheduled_time: scheduled,
     expected_time: expected,
@@ -228,7 +241,7 @@ const S_TRAIN: Record<string, string> = {
   A: '#0173B7', B: '#72BF44', BX: '#72BF44', C: '#E87722', E: '#8B8C8E', F: '#FFC917', H: '#E30613',
 };
 const DSB_RED = '#E30613';
-const DSB_LINES = ['IC', 'LYN', 'ICL', 'REG'];
+const DSB_LINES = ['IC', 'LYN', 'ICL', 'RE', 'REG'];
 const ORESUND = ['ØRE', 'ØRESUND'];
 const LOKALTOG = [
   'HORNBÆKBANEN', 'LILLE NORD', 'FREDERIKSVÆRKBANEN', 'GRIBSKOVBANEN', 'NÆRUMBANEN', 'ØSTBANEN',

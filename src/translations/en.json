@@ -21,7 +21,8 @@
     "mode_train": "Train",
     "mode_tram": "Tram",
     "mode_taxi": "Taxi",
-    "mode_boat": "Boat"
+    "mode_boat": "Boat",
+    "train_number": "Train {number}"
   },
   "status": {
     "cancelled": "Cancelled",

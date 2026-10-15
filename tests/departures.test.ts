@@ -92,6 +92,29 @@ describe('mapRejseplanenDeparture', () => {
     expect(mapRejseplanenDeparture(kokkedal.Departure[1], new Date(2026, 9, 15, 14, 10))!.real_time).toBe(false);
   });
 
+  it('shows the category as line and keeps the train number for numbered trains', () => {
+    const item = mapRejseplanenDeparture(kokkedal.Departure[0], new Date(2026, 9, 15, 14, 10))!;
+    expect(item.line).toBe('Re');
+    expect(item.train_number).toBe('52257');
+    expect(getLineColor(item.line, item.transport_mode)?.bg).toBe('#E30613');
+  });
+
+  it('leaves lines without the lineHidden flag untouched', () => {
+    // S-tog, metro and buses carry a real line number; they must not be rewritten
+    const lines = fixture.Departure.map((d) => mapRejseplanenDeparture(d, NOW)!);
+    expect(lines.map((d) => d.line)).toEqual(['C', 'M2', 'B', 'IC', '150S']);
+    expect(lines.every((d) => d.train_number === undefined)).toBe(true);
+    // A train without the flag keeps its number as the line
+    expect(mapRejseplanenDeparture(kokkedal.Departure[1], NOW)!.line).toBe('52559');
+  });
+
+  it('keeps the number as line when a flagged departure has no category', () => {
+    const d = { ...kokkedal.Departure[0], ProductAtStop: { ...kokkedal.Departure[0].ProductAtStop, catOut: '' } };
+    const item = mapRejseplanenDeparture(d, NOW)!;
+    expect(item.line).toBe('52257');
+    expect(item.train_number).toBeUndefined();
+  });
+
   it('returns null for empty input', () => {
     expect(mapRejseplanenDeparture(null, NOW)).toBeNull();
   });
