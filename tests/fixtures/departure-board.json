@@ -1,0 +1,62 @@
+{
+  "Departure": [
+    {
+      "name": "S-tog C",
+      "type": "ST",
+      "stop": "Kokkedal St.",
+      "stopid": "A=1@O=Kokkedal St.@X=12502370@Y=55903500@U=86@L=8600664@",
+      "time": "23:48:00",
+      "date": "2026-11-25",
+      "track": "1",
+      "direction": "Frederikssund St.",
+      "ProductAtStop": { "name": "S-tog C", "displayNumber": "C", "catOut": "S", "catOutL": "S-Tog", "icon": { "res": "prod_comm" } }
+    },
+    {
+      "name": "M2",
+      "type": "ST",
+      "stop": "Nørreport St.",
+      "time": "23:50:00",
+      "date": "2026-11-25",
+      "direction": "Lufthavnen St. (Metro)",
+      "ProductAtStop": { "name": "Metro M2", "displayNumber": "M2", "catOut": "MET", "catOutL": "Metro", "icon": { "res": "prod_sub" } }
+    },
+    {
+      "name": "S-tog B",
+      "type": "ST",
+      "stop": "Kokkedal St.",
+      "time": "23:52:00",
+      "date": "2026-11-25",
+      "rtTime": "23:52:00",
+      "rtDate": "2026-11-25",
+      "track": "2",
+      "rtTrack": "2",
+      "direction": "Høje Taastrup St.",
+      "ProductAtStop": { "name": "S-tog B", "displayNumber": "B", "catOut": "S", "catOutL": "S-Tog", "icon": { "res": "prod_comm" } }
+    },
+    {
+      "name": "IC 845",
+      "type": "ST",
+      "stop": "Kokkedal St.",
+      "time": "23:55:00",
+      "date": "2026-11-25",
+      "rtTime": "00:03:00",
+      "rtDate": "2026-11-26",
+      "track": "3",
+      "rtTrack": "4",
+      "direction": "Helsingør St.",
+      "ProductAtStop": { "name": "IC 845", "displayNumber": "IC", "catOut": "IC", "catOutL": "InterCity", "icon": { "res": "prod_ic" } }
+    },
+    {
+      "name": "Bus 150S",
+      "type": "ST",
+      "stop": "Kokkedal St. (Kokkedal Stationsvej)",
+      "time": "00:10:00",
+      "date": "2026-11-26",
+      "cancelled": true,
+      "direction": "Nørreport St.",
+      "ProductAtStop": { "name": "Bus 150S", "displayNumber": "150S", "catOut": "Bus", "catOutL": "Bus", "icon": { "res": "prod_bus" } }
+    }
+  ],
+  "requestId": "fixture",
+  "serverVersion": "2.45.1"
+}

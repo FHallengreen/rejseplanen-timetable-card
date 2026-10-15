@@ -1,9 +1,10 @@
 {
   "card": {
-    "title": "Trafiklab Timetable"
+    "title": "Rejseplanen Timetable"
   },
   "error": {
-    "entity_not_found": "Entity not found: {entity}"
+    "entity_not_found": "Entity not found: {entity}",
+    "xml_format": "The sensor returns XML data. Add format=json to the Rejseplanen API URL."
   },
   "empty": {
     "no_upcoming": "No upcoming departures"
@@ -25,14 +26,15 @@
   "status": {
     "cancelled": "Cancelled",
     "delayed": "Delayed {minutes} min",
-    "on_time": "On time"
+    "on_time": "On time",
+    "scheduled": "Scheduled"
   },
   "editor": {
     "sensor_entity": "Sensor entity",
     "show_heading": "Show heading (friendly name)",
     "max_items": "Max items",
     "section_general": "Card options",
-    "help_sensor": "Select the Trafiklab timetable sensor entity.",
+    "help_sensor": "Select the Rejseplanen REST sensor (with a Departure attribute).",
     "help_show_heading": "Show the sensor's friendly name as the card heading.",
     "help_max_items": "Maximum number of departures to display."
   }

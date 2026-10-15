@@ -1,0 +1,199 @@
+import { describe, expect, it } from 'vitest';
+import {
+  detectMode,
+  formatClock,
+  formatClockString,
+  getDepartures,
+  getLineColor,
+  HassEntity,
+  isXmlShaped,
+  mapRejseplanenDeparture,
+  parseDateTime,
+  pillSize,
+  uses12h,
+} from '../src/departures';
+import fixture from './fixtures/departure-board.json';
+
+// 2026-11-25 23:50:30 local time
+const NOW = new Date(2026, 10, 25, 23, 50, 30);
+
+function sensor(attributes: Record<string, any>): HassEntity {
+  return { entity_id: 'sensor.rejseplanen', state: '0', attributes };
+}
+
+describe('parseDateTime', () => {
+  it('parses Rejseplanen date and time as local time', () => {
+    expect(parseDateTime('2026-11-26', '00:03:00')).toEqual(new Date(2026, 10, 26, 0, 3, 0));
+    expect(parseDateTime('2026-11-26', '00:03')).toEqual(new Date(2026, 10, 26, 0, 3, 0));
+  });
+
+  it('returns undefined for missing or malformed input', () => {
+    expect(parseDateTime(undefined, '00:03')).toBeUndefined();
+    expect(parseDateTime('26.11.26', '00:03')).toBeUndefined();
+  });
+});
+
+describe('mapRejseplanenDeparture', () => {
+  const byLine = (line: string) => fixture.Departure.find((d) => d.ProductAtStop.displayNumber === line);
+
+  it('maps an on-time real-time S-train', () => {
+    expect(mapRejseplanenDeparture(byLine('B'), NOW)).toEqual({
+      line: 'B',
+      destination: 'Høje Taastrup St.',
+      scheduled_time: '23:52',
+      expected_time: '23:52',
+      time_formatted: '23:52',
+      minutes_until: 2,
+      transport_mode: 'train',
+      real_time: true,
+      delay_minutes: 0,
+      canceled: false,
+      platform: '2',
+      station: 'Kokkedal St.',
+    });
+  });
+
+  it('computes delay and countdown across midnight using rtDate', () => {
+    const item = mapRejseplanenDeparture(byLine('IC'), NOW)!;
+    expect(item.delay_minutes).toBe(8);
+    expect(item.minutes_until).toBe(13);
+    expect(item.expected_time).toBe('00:03');
+    expect(item.platform).toBe('4'); // real-time track wins
+  });
+
+  it('marks cancelled departures', () => {
+    const item = mapRejseplanenDeparture(byLine('150S'), NOW)!;
+    expect(item.canceled).toBe(true);
+    expect(item.real_time).toBe(false);
+    expect(item.transport_mode).toBe('bus');
+  });
+
+  it('reports 0 minutes for a departure in the current minute', () => {
+    expect(mapRejseplanenDeparture(byLine('M2'), NOW)!.minutes_until).toBe(0);
+  });
+
+  it('falls back to clock arithmetic when no date is given', () => {
+    const item = mapRejseplanenDeparture({ time: '00:05:00', rtTime: '00:07:00', ProductAtStop: {} }, NOW)!;
+    expect(item.minutes_until).toBe(17);
+    expect(item.delay_minutes).toBe(2);
+  });
+
+  it('returns null for empty input', () => {
+    expect(mapRejseplanenDeparture(null, NOW)).toBeNull();
+  });
+});
+
+describe('getDepartures', () => {
+  it('maps the Departure attribute and hides departures that already left', () => {
+    const lines = getDepartures(sensor(fixture), NOW).map((d) => d.line);
+    expect(lines).toEqual(['M2', 'B', 'IC', '150S']);
+  });
+
+  it('orders by actual departure so delayed services move down', () => {
+    const late = { ...fixture.Departure[3], ProductAtStop: { ...fixture.Departure[3].ProductAtStop, displayNumber: 'LATE' },
+      time: '23:51:00', rtTime: '23:59:00', rtDate: '2026-11-25' };
+    const lines = getDepartures(sensor({ Departure: [late, ...fixture.Departure] }), NOW).map((d) => d.line);
+    expect(lines).toEqual(['M2', 'B', 'LATE', 'IC', '150S']);
+  });
+
+  it('accepts a single Departure object instead of an array', () => {
+    expect(getDepartures(sensor({ Departure: fixture.Departure[2] }), NOW)).toHaveLength(1);
+  });
+
+  it('passes through preprocessed upcoming items', () => {
+    const upcoming = [{ line: '5C', destination: 'Herlev', minutes_until: 4 }];
+    expect(getDepartures(sensor({ upcoming }), NOW)).toEqual(upcoming);
+  });
+
+  it('returns nothing for a missing entity or attribute', () => {
+    expect(getDepartures(undefined, NOW)).toEqual([]);
+    expect(getDepartures(sensor({}), NOW)).toEqual([]);
+  });
+});
+
+describe('isXmlShaped', () => {
+  it('detects xmltodict output from an XML response', () => {
+    expect(isXmlShaped(sensor({ Departure: [{ '@name': 'Bus 150S', '@time': '00:10:00' }] }))).toBe(true);
+    expect(isXmlShaped(sensor({ DepartureBoard: { Departure: { '@name': 'Bus 150S' } } }))).toBe(true);
+  });
+
+  it('accepts JSON responses', () => {
+    expect(isXmlShaped(sensor(fixture))).toBe(false);
+    expect(isXmlShaped(sensor({}))).toBe(false);
+  });
+});
+
+describe('detectMode', () => {
+  it.each([
+    [{ catOut: 'MET', catOutL: 'Metro' }, 'metro'],
+    [{ catOut: 'S', catOutL: 'S-Tog' }, 'train'],
+    [{ catOut: 'LOK', catOutL: 'Lokalbane' }, 'train'],
+    [{ catOut: 'LET', catOutL: 'Letbane' }, 'tram'],
+    [{ icon: { res: 'prod_ship' } }, 'boat'],
+    [{ catOut: 'Bus', catOutL: 'Bus' }, 'bus'],
+  ])('%j -> %s', (pat, mode) => {
+    expect(detectMode(pat)).toBe(mode);
+  });
+});
+
+describe('getLineColor', () => {
+  it.each([
+    ['M1', 'bus', '#0A9A48'],
+    ['A', 'train', '#0173B7'],
+    ['F', 'train', '#FFC917'],
+    ['IC', 'train', '#E30613'],
+    ['2A', 'bus', '#E30613'],
+    ['150S', 'bus', '#0173B7'],
+    ['N5', 'bus', '#003366'],
+    ['1234', 'train', '#E30613'],
+    ['14', 'bus', '#FFC917'],
+  ])('%s (%s) -> %s', (line, mode, bg) => {
+    expect(getLineColor(line, mode)?.bg).toBe(bg);
+  });
+
+  it('uses dark text on yellow backgrounds', () => {
+    expect(getLineColor('M2')).toEqual({ bg: '#FFC917', color: '#000' });
+  });
+
+  it('returns undefined for unknown lines', () => {
+    expect(getLineColor('Hornbæk Express')).toBeUndefined();
+    expect(getLineColor(undefined)).toBeUndefined();
+  });
+});
+
+describe('time format', () => {
+  it('follows the UI language when set to "language"', () => {
+    expect(uses12h({ language: 'en', time_format: 'language' })).toBe(true);
+    expect(uses12h({ language: 'en-GB', time_format: 'language' })).toBe(false);
+    expect(uses12h({ language: 'da', time_format: 'language' })).toBe(false);
+    expect(uses12h({ language: 'sv' })).toBe(false);
+    expect(uses12h(undefined, 'da')).toBe(false);
+  });
+
+  it('respects an explicit 12/24 hour choice', () => {
+    expect(uses12h({ language: 'da', time_format: '12' })).toBe(true);
+    expect(uses12h({ language: 'en', time_format: '24' })).toBe(false);
+  });
+
+  it('formats clock times', () => {
+    expect(formatClock(13, 5, false)).toBe('13:05');
+    expect(formatClock(13, 5, true)).toBe('1:05 PM');
+    expect(formatClock(0, 3, true)).toBe('12:03 AM');
+    expect(formatClockString('00:03', false)).toBe('00:03');
+    expect(formatClockString('23:52', true)).toBe('11:52 PM');
+    expect(formatClockString('soon', true)).toBe('soon');
+  });
+});
+
+describe('pillSize', () => {
+  it.each([
+    ['M2', 'normal'],
+    ['150S', 'normal'],
+    ['Bus 5', 'medium'],
+    ['Lille Nord', 'long'],
+    ['Hornbækbanen', 'xlong'],
+    [undefined, 'normal'],
+  ])('%s -> %s', (line, size) => {
+    expect(pillSize(line)).toBe(size);
+  });
+});

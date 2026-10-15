@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import type { RejseplanenTimetableCardConfig } from './trafiklab-timetable-card';
+import type { RejseplanenTimetableCardConfig } from './rejseplanen-timetable-card';
 import { localize } from './localize';
 
 type HomeAssistant = any;
@@ -42,7 +42,7 @@ export class RejseplanenTimetableCardEditor extends LitElement {
 
   render() {
     const t = (p: string, v?: Record<string, any>) => localize(this.hass, p, v);
-  const hasEntityPicker = !!customElements.get('ha-entity-picker') && !!this.hass;
+    const hasEntityPicker = !!customElements.get('ha-entity-picker') && !!this.hass;
     const hasSwitch = !!customElements.get('ha-switch');
     const hasTextfield = !!customElements.get('ha-textfield');
     const hasHaForm = !!customElements.get('ha-form');
@@ -91,11 +91,11 @@ export class RejseplanenTimetableCardEditor extends LitElement {
           @value-changed=${(e: CustomEvent) => {
             const value = (e.detail as any)?.value || {};
             const next = {
-              ...(this._config || { type: 'trafiklab-timetable-card' }),
+              ...(this._config || { type: 'custom:rejseplanen-timetable-card' }),
               entity: value.entity ?? '',
               show_name: value.show_name ?? true,
               max_items: typeof value.max_items === 'number' ? value.max_items : Number(value.max_items) || 5,
-            } as TrafiklabTimetableCardConfig as any;
+            } as RejseplanenTimetableCardConfig;
             if (JSON.stringify(next) !== JSON.stringify(this._config)) {
               this._config = next;
               this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: next } }));
@@ -170,4 +170,7 @@ export class RejseplanenTimetableCardEditor extends LitElement {
   `;
 }
 
-customElements.define('rejseplanen-timetable-card-editor', RejseplanenTimetableCardEditor);
+// Guard against the bundle being loaded twice (e.g. a HACS and a manual resource)
+if (!customElements.get('rejseplanen-timetable-card-editor')) {
+  customElements.define('rejseplanen-timetable-card-editor', RejseplanenTimetableCardEditor);
+}
