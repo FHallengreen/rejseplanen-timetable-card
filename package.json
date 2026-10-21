@@ -25,7 +25,7 @@
   "devDependencies": {
     "happy-dom": "^21.0.1",
     "typescript": "^5.5.4",
-    "vite": "^8.2.2",
+    "vite": "^8.3.5",
     "vitest": "^5.0.4"
   },
   "dependencies": {
